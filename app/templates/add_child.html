@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}添加孩子{% endblock %}
+
+{% block content %}
+<h1>添加孩子</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="name">姓名</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div class="form-group">
+        <label for="age">年龄 (可选)</label>
+        <input type="number" id="age" name="age" min="0">
+    </div>
+    <button type="submit" class="button">添加</button>
+</form>
+{% endblock %}

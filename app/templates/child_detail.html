@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{{ child.name }}的详情{% endblock %}
+
+{% block content %}
+<h1>{{ child.name }}的详情</h1>
+<div>
+    <p><strong>年龄：</strong>{{ child.age or '未设置' }}</p>
+    <p><strong>当前积分：</strong>{{ child.points }}</p>
+</div>
+
+<h2>任务完成记录</h2>
+{% if task_records %}
+<table>
+    <tr>
+        <th>任务名称</th>
+        <th>积分</th>
+        <th>完成时间</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    {% for record in task_records %}
+    <tr>
+        <td>{{ record.task.name }}</td>
+        <td>{{ record.task.points }}</td>
+        <td>{{ record.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ '已确认' if record.is_confirmed else '待确认' }}</td>
+        <td>
+            {% if not record.is_confirmed %}
+            <a href="{{ url_for('main.confirm_task_record', record_id=record.id) }}" class="button">确认</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>暂无任务记录</p>
+{% endif %}
+
+<h2>奖励兑换记录</h2>
+{% if reward_records %}
+<table>
+    <tr>
+        <th>奖励名称</th>
+        <th>消耗积分</th>
+        <th>兑换时间</th>
+        <th>状态</th>
+    </tr>
+    {% for record in reward_records %}
+    <tr>
+        <td>{{ record.reward.name }}</td>
+        <td>{{ record.reward.cost }}</td>
+        <td>{{ record.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ '已兑现' if record.is_fulfilled else '待兑现' }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>暂无奖励记录</p>
+{% endif %}
+
+<h2>可兑换奖励</h2>
+{% if available_rewards %}
+<table>
+    <tr>
+        <th>奖励名称</th>
+        <th>描述</th>
+        <th>所需积分</th>
+        <th>操作</th>
+    </tr>
+    {% for reward in available_rewards %}
+    <tr>
+        <td>{{ reward.name }}</td>
+        <td>{{ reward.description or '无' }}</td>
+        <td>{{ reward.cost }}</td>
+        <td>
+            <a href="{{ url_for('main.redeem_reward', child_id=child.id, reward_id=reward.id) }}" class="button">兑换</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>没有足够积分兑换任何奖励</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}添加奖励{% endblock %}
+
+{% block content %}
+<h1>添加奖励</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="name">奖励名称</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div class="form-group">
+        <label for="description">描述 (可选)</label>
+        <textarea id="description" name="description" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="cost">所需积分</label>
+        <input type="number" id="cost" name="cost" min="1" required>
+    </div>
+    <button type="submit" class="button">添加</button>
+</form>
+{% endblock %}

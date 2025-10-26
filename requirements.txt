@@ -1,0 +1,6 @@
+Flask
+SQLAlchemy
+Flask-SQLAlchemy
+Flask-Login
+python-dotenv
+WTForms

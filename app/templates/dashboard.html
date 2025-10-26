@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘{% endblock %}
+
+{% block content %}
+<h1>欢迎使用小孩成长奖励系统</h1>
+<h2>我的孩子</h2>
+{% if children %}
+<table>
+    <tr>
+        <th>姓名</th>
+        <th>年龄</th>
+        <th>当前积分</th>
+        <th>操作</th>
+    </tr>
+    {% for child in children %}
+    <tr>
+        <td>{{ child.name }}</td>
+        <td>{{ child.age or '未设置' }}</td>
+        <td>{{ child.points }}</td>
+        <td>
+            <a href="{{ url_for('main.child_detail', child_id=child.id) }}" class="button">查看详情</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>您还没有添加孩子，点击下方按钮添加</p>
+{% endif %}
+<a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
+{% endblock %}
