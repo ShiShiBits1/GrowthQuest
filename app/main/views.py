@@ -50,8 +50,8 @@ def logout():
 @main.route('/')
 @login_required
 def dashboard():
-    children = current_user.children.all()
-    return render_template('dashboard.html', children=children)
+    # 仪表盘现在显示规则说明，不再需要传递children数据
+    return render_template('dashboard.html')
 
 # 孩子管理路由
 @main.route('/children')
@@ -92,21 +92,7 @@ def edit_child(child_id):
     
     return render_template('edit_child.html', child=child)
 
-@main.route('/child/delete/<int:child_id>')
-@login_required
-def delete_child(child_id):
-    child = Child.query.get_or_404(child_id)
-    # 确保是当前用户的孩子
-    if child.parent != current_user:
-        flash('无权操作')
-        return redirect(url_for('main.dashboard'))
-    
-    # 删除孩子（级联删除会自动删除相关的任务记录和奖励记录）
-    child_name = child.name
-    db.session.delete(child)
-    db.session.commit()
-    flash(f'孩子 {child_name} 已成功删除')
-    return redirect(url_for('main.list_children'))
+# 删除功能已移至POST方法实现，见文件底部
 
 # 任务管理路由
 @main.route('/tasks')
@@ -393,3 +379,34 @@ def delete_child(child_id):
         flash(f'删除失败: {str(e)}')
     
     return redirect(url_for('main.list_children'))
+
+# 积分商城
+@main.route('/mall')
+@login_required
+def mall():
+    # 获取当前用户的所有孩子
+    children = current_user.children.all()
+    # 获取所有激活的奖励（用于积分商城展示）
+    available_rewards = Reward.query.filter_by(is_active=True).all()
+    
+    # 为每个奖励计算每个孩子的可兑换数量
+    rewards_with_availability = []
+    for reward in available_rewards:
+        child_availability = []
+        for child in children:
+            # 计算孩子可以兑换该奖励的数量
+            can_redeem_count = child.points // reward.cost if reward.cost > 0 else 0
+            child_availability.append({
+                'child': child,
+                'can_redeem_count': can_redeem_count,
+                'has_enough_points': can_redeem_count > 0
+            })
+        
+        rewards_with_availability.append({
+            'reward': reward,
+            'children_availability': child_availability
+        })
+    
+    return render_template('mall.html', 
+                          children=children, 
+                          rewards_with_availability=rewards_with_availability)

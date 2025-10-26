@@ -10,11 +10,13 @@
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
+            line-height: 1.6;
         }
         header {
             background-color: #333;
             color: white;
             padding: 10px 20px;
+            position: relative;
         }
         nav {
             display: flex;
@@ -26,10 +28,24 @@
             text-decoration: none;
             margin: 0 10px;
         }
+        .menu-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .nav-menu {
+            display: flex;
+            align-items: center;
+        }
+        .nav-right {
+            display: flex;
+            align-items: center;
+        }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            box-sizing: border-box;
         }
         .flash {
             padding: 10px;
@@ -41,15 +57,20 @@
         .success {
             background-color: #4CAF50;
         }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            min-width: 600px;
         }
         th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            white-space: nowrap;
         }
         th {
             background-color: #4CAF50;
@@ -58,16 +79,83 @@
         tr:hover {
             background-color: #f5f5f5;
         }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px 10px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            p {
+                font-size: 14px;
+            }
+            /* 移动设备表格响应式优化 */
+            .table-container {
+                -webkit-overflow-scrolling: touch;
+            }
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            table {
+                min-width: 500px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px 5px;
+            }
+            header {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            table {
+                min-width: 400px;
+            }
+            /* 移动设备按钮和表单优化 */
+            .button {
+                padding: 12px 20px;
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+                font-size: 18px;
+            }
+            input, textarea, select {
+                font-size: 16px; /* 防止iOS缩放 */
+                padding: 12px;
+            }
+        }
         .button {
             display: inline-block;
-            padding: 8px 16px;
+            padding: 10px 16px;
             background-color: #4CAF50;
             color: white;
             text-decoration: none;
             border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
         }
         .danger-button {
             background-color: #f44336;
+        }
+        .danger-button:hover {
+            background-color: #da190b;
         }
         .form-group {
             margin-bottom: 15px;
@@ -79,11 +167,24 @@
         }
         input, textarea, select {
             width: 100%;
-            padding: 12px 8px;
+            padding: 12px 10px;
             box-sizing: border-box;
             border: 1px solid #ddd;
             border-radius: 4px;
-            height: 40px; /* 增加下拉菜单高度 */
+            height: 40px;
+            font-size: 16px;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        
+        textarea {
+            height: auto;
+            min-height: 100px;
+            resize: vertical;
         }
         
         select {
@@ -91,23 +192,61 @@
             /* 确保下拉菜单有足够的高度 */
             min-height: 40px;
             line-height: 40px;
+            cursor: pointer;
+        }
+        
+        /* 汉堡菜单响应式设计 */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 50px;
+                left: 0;
+                right: 0;
+                background-color: #333;
+                padding: 10px;
+                z-index: 100;
+            }
+            .nav-menu a {
+                margin: 5px 0;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            nav {
+                align-items: flex-start;
+                padding-top: 5px;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <nav>
-            <div>
-                <a href="{{ url_for('main.dashboard') }}">首页</a>
-                <a href="{{ url_for('main.list_children') }}">孩子管理</a>
-                <a href="{{ url_for('main.list_tasks') }}">任务管理</a>
-                <a href="{{ url_for('main.list_rewards') }}">奖励管理</a>
-                <a href="{{ url_for('main.add_points') }}">添加积分</a>
+            <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+            <div class="nav-menu" id="navMenu">
+                <a href="{{ url_for('main.dashboard') }}">🏠 首页</a>
+                <a href="{{ url_for('main.list_children') }}">👶 孩子管理</a>
+                <a href="{{ url_for('main.list_tasks') }}">📝 任务管理</a>
+                <a href="{{ url_for('main.list_rewards') }}">🎁 奖励管理</a>
+                <a href="{{ url_for('main.add_points') }}">➕ 添加积分</a>
+                <a href="{{ url_for('main.mall') }}">🛒 积分商城</a>
             </div>
-            <div>
+            <div class="nav-right">
                 <a href="{{ url_for('main.logout') }}">退出登录</a>
             </div>
         </nav>
+        
+        <script>
+            function toggleMenu() {
+                const navMenu = document.getElementById('navMenu');
+                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
+            }
+        </script>
     </header>
     
     <div class="container">

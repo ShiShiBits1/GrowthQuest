@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}积分商城{% endblock %}
+
+{% block content %}
+    <h1>🛒 积分商城</h1>
+    <p>欢迎来到积分商城！在这里您可以为孩子选择并兑换各种奖励。</p>
+    
+    {% if children|length == 0 %}
+        <div class="flash">您还没有添加孩子，请先添加孩子后再使用积分商城功能。</div>
+        <a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
+    {% elif rewards_with_availability|length == 0 %}
+        <div class="flash">商城中暂无可用奖励，请联系管理员添加奖励。</div>
+    {% else %}
+        <div class="mall-container">
+            {% for item in rewards_with_availability %}
+            <div class="reward-card">
+                <h3>🎁 {{ item.reward.name }}</h3>
+                <p><strong>价格:</strong> {{ item.reward.cost }} 积分</p>
+                <p><strong>等级:</strong> {{ item.reward.level }}</p>
+                {% if item.reward.description %}
+                <p><strong>描述:</strong> {{ item.reward.description }}</p>
+                {% endif %}
+                
+                <div class="child-redemption-section">
+                    <h4>为孩子兑换</h4>
+                    {% for child_info in item.children_availability %}
+                    <div class="child-redemption-item">
+                        <span>{{ child_info.child.name }} (当前积分: {{ child_info.child.points }})</span>
+                        {% if child_info.has_enough_points %}
+                        <a href="{{ url_for('main.redeem_reward', child_id=child_info.child.id, reward_id=item.reward.id) }}" 
+                           class="button" 
+                           onclick="return confirm('确定要为{{ child_info.child.name }}兑换【{{ item.reward.name }}】吗？将扣除{{ item.reward.cost }}积分。')">
+                            立即兑换
+                        </a>
+                        <span class="redeem-info">可兑换 {{ child_info.can_redeem_count }} 个</span>
+                        {% else %}
+                        <span class="insufficient-points">积分不足</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <style>
+        .mall-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .reward-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .reward-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .child-redemption-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .child-redemption-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .child-redemption-item span {
+            flex: 1;
+        }
+        
+        .redeem-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .insufficient-points {
+            color: #f44336;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .mall-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .child-redemption-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+{% endblock %}

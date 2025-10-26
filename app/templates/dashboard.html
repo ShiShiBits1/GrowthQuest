@@ -1,49 +1,145 @@
 {% extends "base.html" %}
 
-{% block title %}仪表盘{% endblock %}
+{% block title %}仪表盘 - 规则说明{% endblock %}
 
 {% block content %}
 <h1>欢迎使用小孩成长奖励系统</h1>
-<h2>我的孩子</h2>
-{% if children %}
-<table>
+<p>这是一个帮助您管理孩子成长过程中任务和奖励的系统。通过积分激励机制，让孩子养成良好习惯，获得成就感。</p>
+
+<h2>📝 任务管理规则</h2>
+<div class="table-container">
+<table class="rule-table">
     <tr>
-        <th>姓名</th>
-        <th>年龄</th>
-        <th>当前积分</th>
-        <th>操作</th>
+        <th>规则类别</th>
+        <th>具体说明</th>
+        <th>操作路径</th>
     </tr>
-    {% for child in children %}
     <tr>
-        <td>{{ child.name }}</td>
-        <td>{{ child.age or '未设置' }}</td>
-        <td>
-            <div>
-                {{ child.points }} 分
-            </div>
-            <!-- 积分进度条 -->
-            <div class="progress-container" style="width: 100%; height: 10px; background-color: #eee; border-radius: 5px; margin-top: 5px;">
-                {% set progress_width = (child.points / 200) * 100 %}
-                {% set progress_width = progress_width if progress_width <= 100 else 100 %}
-                <!-- 根据积分范围显示不同颜色 -->
-                {% if child.points < 50 %}
-                <div class="progress-bar" style="width: {{ progress_width }}%; height: 100%; background-color: #ff9800; border-radius: 5px;"></div>
-                {% elif child.points < 100 %}
-                <div class="progress-bar" style="width: {{ progress_width }}%; height: 100%; background-color: #4caf50; border-radius: 5px;"></div>
-                {% else %}
-                <div class="progress-bar" style="width: {{ progress_width }}%; height: 100%; background-color: #2196f3; border-radius: 5px;"></div>
-                {% endif %}
-            </div>
-        </td>
-        <td>
-            <a href="{{ url_for('main.child_detail', child_id=child.id) }}" class="button">查看详情</a>
-            <a href="{{ url_for('main.child_progress', child_id=child.id) }}" class="button">积分追踪</a>
-        </td>
+        <td>添加任务</td>
+        <td>为孩子创建各种类型的任务，包括学习任务、生活习惯等</td>
+        <td>任务管理 → 添加任务</td>
     </tr>
-    {% endfor %}
+    <tr>
+        <td>任务状态</td>
+        <td>任务可设置为待完成、已完成、已取消等状态</td>
+        <td>任务管理 → 任务列表</td>
+    </tr>
+    <tr>
+        <td>任务积分</td>
+        <td>每个任务可设置对应积分奖励，完成后自动发放</td>
+        <td>添加任务时设置</td>
+    </tr>
+    <tr>
+        <td>任务优先级</td>
+        <td>可设置任务优先级，区分重要程度</td>
+        <td>添加/编辑任务时设置</td>
+    </tr>
+    <tr>
+        <td>任务提醒</td>
+        <td>可为任务设置截止日期，到期提醒</td>
+        <td>添加/编辑任务时设置</td>
+    </tr>
 </table>
-{% else %}
-<p>您还没有添加孩子，点击下方按钮添加</p>
-{% endif %}
-<a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
+</div>
+
+<h2>🎁 积分商城规则</h2>
+<div class="table-container">
+<table class="rule-table">
+    <tr>
+        <th>规则类别</th>
+        <th>具体说明</th>
+        <th>操作路径</th>
+    </tr>
+    <tr>
+        <td>积分获取</td>
+        <td>通过完成任务获得相应积分奖励</td>
+        <td>任务管理 → 完成任务</td>
+    </tr>
+    <tr>
+        <td>积分查看</td>
+        <td>可在孩子详情页查看当前积分余额</td>
+        <td>孩子管理 → 查看详情</td>
+    </tr>
+    <tr>
+        <td>奖励兑换</td>
+        <td>使用积分兑换预设奖励，兑换后扣除相应积分</td>
+        <td>积分商城 → 选择奖励兑换</td>
+    </tr>
+    <tr>
+        <td>奖励等级</td>
+        <td>奖励按难度分级，对应不同积分要求</td>
+        <td>奖励管理 → 奖励列表</td>
+    </tr>
+    <tr>
+        <td>兑换记录</td>
+        <td>系统自动记录所有积分获取和使用历史</td>
+        <td>孩子管理 → 积分追踪</td>
+    </tr>
+</table>
+</div>
+
+<h2>👶 快速开始</h2>
+<div class="quick-start">
+    <ol>
+        <li>点击"孩子管理"添加您的孩子信息</li>
+        <li>点击"任务管理"创建适合孩子的成长任务</li>
+        <li>当孩子完成任务后，确认任务完成状态</li>
+        <li>在"积分商城"中浏览和兑换奖励</li>
+        <li>通过"积分追踪"查看孩子的成长历程</li>
+    </ol>
+</div>
+
+<style>
+    .rule-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .rule-table th, .rule-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+    
+    .rule-table th {
+        background-color: #3498db;
+        color: white;
+        font-weight: bold;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .rule-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .rule-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .quick-start {
+        background-color: #e3f2fd;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .quick-start ol {
+        padding-left: 20px;
+    }
+    
+    .quick-start li {
+        margin-bottom: 8px;
+    }
+    
+    @media (max-width: 768px) {
+        .rule-table {
+            font-size: 14px;
+        }
+        
+        .rule-table th, .rule-table td {
+            padding: 8px;
+        }
+    }
+</style>
 {% endblock %}
