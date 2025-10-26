@@ -89,6 +89,24 @@
     </ol>
 </div>
 
+<h2>✨ 即将推出: 荣誉墙与任务退休机制</h2>
+<div class="coming-soon">
+    <div class="feature-card">
+        <h3>🏆 好习惯荣誉墙</h3>
+        <p>当孩子真正养成一个好习惯（如每天主动刷牙、整理书包不再需要提醒），可以将这个任务标记为"已养成"，并将其永久记录在荣誉墙上。这将成为孩子成长历程的见证，展示他们的进步和成就。</p>
+    </div>
+    
+    <div class="feature-card">
+        <h3>🎓 任务"退休"仪式</h3>
+        <p>为已养成的好习惯举办"毕业典礼"，正式宣布该任务"退休"，并给予特别奖励。这个仪式感满满的环节将让孩子感受到成长的喜悦和成就感，同时为引入新的、更具挑战性的任务腾出空间。</p>
+    </div>
+    
+    <div class="feature-card">
+        <h3>📈 成长动态调整</h3>
+        <p>系统将帮助您根据孩子的成长情况，动态调整任务难度和奖励机制，确保始终保持适当的挑战性和激励性，让孩子在不断进步中获得持续的成长动力。</p>
+    </div>
+</div>
+
 <style>
     .rule-table {
         width: 100%;
@@ -139,6 +157,39 @@
         
         .rule-table th, .rule-table td {
             padding: 8px;
+        }
+    }
+    
+    .coming-soon {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .feature-card {
+        flex: 1;
+        min-width: 250px;
+        background-color: #fff3e0;
+        border-left: 4px solid #ff9800;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .feature-card h3 {
+        color: #e65100;
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .coming-soon {
+            flex-direction: column;
+        }
+        
+        .feature-card {
+            min-width: 100%;
         }
     }
 </style>
