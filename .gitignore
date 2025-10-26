@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 venv/
+app/__pycache__/
+app/main/__pycache__/
 
 # 数据库文件
 *.sqlite
