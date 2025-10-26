@@ -32,6 +32,7 @@ class Task(db.Model):
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text)
     points = db.Column(db.Integer, nullable=False)  # 完成任务获得的积分
+    category = db.Column(db.String(64), nullable=False, default='学习任务')  # 任务分类：学习任务、生活习惯、品德行为
     is_active = db.Column(db.Boolean, default=True)
     # 关联到任务记录
     records = db.relationship('TaskRecord', backref='task', lazy='dynamic')
@@ -42,6 +43,7 @@ class Reward(db.Model):
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text)
     cost = db.Column(db.Integer, nullable=False)  # 兑换奖励所需的积分
+    level = db.Column(db.String(64), nullable=False, default='小奖励')  # 奖励等级：小奖励、中奖励、大奖励
     is_active = db.Column(db.Boolean, default=True)
     # 关联到奖励记录
     records = db.relationship('RewardRecord', backref='reward', lazy='dynamic')

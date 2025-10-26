@@ -17,6 +17,14 @@
         <label for="cost">所需积分</label>
         <input type="number" id="cost" name="cost" min="1" required>
     </div>
+    <div class="form-group">
+        <label for="level">奖励等级</label>
+        <select id="level" name="level" required>
+            <option value="小奖励">小奖励 (20-50分)</option>
+            <option value="中奖励">中奖励 (50-100分)</option>
+            <option value="大奖励">大奖励 (100分以上)</option>
+        </select>
+    </div>
     <button type="submit" class="button">添加</button>
 </form>
 {% endblock %}

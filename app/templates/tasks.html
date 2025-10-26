@@ -9,15 +9,21 @@
     <tr>
         <th>任务名称</th>
         <th>描述</th>
+        <th>任务分类</th>
         <th>奖励积分</th>
         <th>状态</th>
+        <th>操作</th>
     </tr>
     {% for task in tasks %}
     <tr>
         <td>{{ task.name }}</td>
         <td>{{ task.description or '无' }}</td>
+        <td>{{ task.category }}</td>
         <td>{{ task.points }}</td>
         <td>{{ '激活' if task.is_active else '停用' }}</td>
+        <td>
+            <a href="{{ url_for('main.edit_task', task_id=task.id) }}" class="button">编辑</a>
+        </td>
     </tr>
     {% endfor %}
 </table>

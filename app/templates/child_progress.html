@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}{{ child.name }}的积分追踪{% endblock %}
+
+{% block content %}
+<h1>{{ child.name }}的积分追踪</h1>
+
+<div class="current-points">
+    <h2>当前积分</h2>
+    <div class="points-display">
+        <span class="points-value">{{ child.points }}</span>
+        <span class="points-label">分</span>
+    </div>
+</div>
+
+<!-- 积分历史记录 -->
+<div class="history-section">
+    <h2>积分历史记录</h2>
+    {% if records %}
+    <table class="records-table">
+        <tr>
+            <th>类型</th>
+            <th>描述</th>
+            <th>积分</th>
+            <th>时间</th>
+        </tr>
+        {% for record in records %}
+        <tr class="record-{{ record.type }}">
+            <td>
+                {% if record.type == 'earned' %}
+                <span class="badge earned">{{ record.category }}</span>
+                {% else %}
+                <span class="badge spent">{{ record.level }}</span>
+                {% endif %}
+            </td>
+            <td>{{ record.description }}</td>
+            <td class="amount {{ record.type }}">
+                {% if record.type == 'earned' %}+{% else %}-{% endif %}{{ record.amount }}
+            </td>
+            <td>{{ record.time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>暂无积分记录</p>
+    {% endif %}
+</div>
+
+<!-- 按月积分统计 -->
+<div class="monthly-section">
+    <h2>按月积分统计</h2>
+    {% if monthly_summary %}
+    <div class="monthly-charts">
+        {% for month, data in monthly_summary.items() %}
+        <div class="month-summary">
+            <h3>{{ month }}</h3>
+            <div class="summary-bars">
+                <div class="bar earned" style="width: {{ (data.earned / 200) * 100 }}%;">
+                    获得: {{ data.earned }}分
+                </div>
+                <div class="bar spent" style="width: {{ (data.spent / 200) * 100 }}%;">
+                    消耗: {{ data.spent }}分
+                </div>
+            </div>
+            <div class="net-change">
+                净变化: {{ data.earned - data.spent }}分
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>暂无月度统计数据</p>
+    {% endif %}
+</div>
+
+<!-- 奖励目标进度 -->
+<div class="goals-section">
+    <h2>奖励目标进度</h2>
+    {% if reward_goals %}
+    <div class="goals-list">
+        {% for goal in reward_goals %}
+        <div class="goal-item">
+            <div class="goal-header">
+                <span class="goal-name">{{ goal.name }}</span>
+                <span class="goal-level">{{ goal.level }}</span>
+            </div>
+            <div class="goal-progress">
+                <div class="progress-bar-container">
+                    {% if goal.progress < 30 %}
+                    <div class="progress-bar low" style="width: {{ goal.progress }}%;">
+                    {% elif goal.progress < 70 %}
+                    <div class="progress-bar medium" style="width: {{ goal.progress }}%;">
+                    {% else %}
+                    <div class="progress-bar high" style="width: {{ goal.progress }}%;">
+                    {% endif %}
+                        {{ "%.1f"|format(goal.progress) }}%
+                    </div>
+                </div>
+                <div class="goal-stats">
+                    已获得: {{ child.points }}分 / 所需: {{ goal.cost }}分
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>暂无可用奖励目标</p>
+    {% endif %}
+</div>
+
+<style>
+/* 积分显示样式 */
+.current-points {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.points-display {
+    display: inline-flex;
+    align-items: baseline;
+}
+.points-value {
+    font-size: 3em;
+    font-weight: bold;
+    color: #2196f3;
+}
+.points-label {
+    font-size: 1.5em;
+    margin-left: 5px;
+}
+
+/* 表格样式 */
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+.records-table th,
+.records-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.records-table th {
+    background-color: #f5f5f5;
+}
+.record-earned td.amount {
+    color: #4caf50;
+    font-weight: bold;
+}
+.record-spent td.amount {
+    color: #f44336;
+    font-weight: bold;
+}
+
+/* 标签样式 */
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+.badge.earned {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.badge.spent {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* 月度统计样式 */
+.monthly-section {
+    margin-bottom: 30px;
+}
+.month-summary {
+    margin-bottom: 20px;
+}
+.summary-bars {
+    margin: 10px 0;
+}
+.bar {
+    height: 30px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.bar.earned {
+    background-color: #4caf50;
+}
+.bar.spent {
+    background-color: #f44336;
+}
+.net-change {
+    font-weight: bold;
+}
+
+/* 目标进度样式 */
+.goals-section {
+    margin-bottom: 30px;
+}
+.goal-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.goal-name {
+    font-weight: bold;
+}
+.goal-level {
+    font-size: 0.9em;
+    color: #666;
+}
+.progress-bar-container {
+    width: 100%;
+    height: 20px;
+    background-color: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+.progress-bar.low {
+    background-color: #ff9800;
+}
+.progress-bar.medium {
+    background-color: #4caf50;
+}
+.progress-bar.high {
+    background-color: #2196f3;
+}
+.goal-stats {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+</style>
+
+<a href="{{ url_for('main.child_detail', child_id=child.id) }}" class="button">返回详情</a>
+{% endblock %}

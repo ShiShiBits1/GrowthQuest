@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}编辑孩子信息{% endblock %}
+
+{% block content %}
+<h1>编辑孩子信息</h1>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="flash success">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="name">孩子姓名</label>
+        <input type="text" id="name" name="name" value="{{ child.name }}" required>
+    </div>
+    <div class="form-group">
+        <label for="age">年龄 (可选)</label>
+        <input type="number" id="age" name="age" min="0" {% if child.age %}value="{{ child.age }}"{% endif %}>
+    </div>
+    <div class="form-group">
+        <label>当前积分</label>
+        <input type="number" value="{{ child.points }}" readonly>
+        <p class="help-text">积分只能通过完成任务或兑换奖励来改变</p>
+    </div>
+    <button type="submit" class="button">保存修改</button>
+    <a href="{{ url_for('main.child_detail', child_id=child.id) }}" class="button">取消</a>
+</form>
+
+<style>
+    .help-text {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}

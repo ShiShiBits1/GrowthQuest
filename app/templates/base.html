@@ -77,12 +77,20 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input, textarea {
+        input, textarea, select {
             width: 100%;
-            padding: 8px;
+            padding: 12px 8px;
             box-sizing: border-box;
             border: 1px solid #ddd;
             border-radius: 4px;
+            height: 40px; /* 增加下拉菜单高度 */
+        }
+        
+        select {
+            padding: 8px;
+            /* 确保下拉菜单有足够的高度 */
+            min-height: 40px;
+            line-height: 40px;
         }
     </style>
 </head>
@@ -94,6 +102,7 @@
                 <a href="{{ url_for('main.list_children') }}">孩子管理</a>
                 <a href="{{ url_for('main.list_tasks') }}">任务管理</a>
                 <a href="{{ url_for('main.list_rewards') }}">奖励管理</a>
+                <a href="{{ url_for('main.add_points') }}">添加积分</a>
             </div>
             <div>
                 <a href="{{ url_for('main.logout') }}">退出登录</a>

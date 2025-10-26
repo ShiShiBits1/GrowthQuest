@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}编辑任务{% endblock %}
+
+{% block content %}
+<h1>编辑任务</h1>
+<form method="post">
+    <div class="form-group">
+        <label for="name">任务名称</label>
+        <input type="text" id="name" name="name" value="{{ task.name }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">任务描述</label>
+        <textarea id="description" name="description">{{ task.description }}</textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="points">奖励积分</label>
+        <input type="number" id="points" name="points" value="{{ task.points }}" min="1" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="category">任务分类</label>
+        <select id="category" name="category" required>
+            <option value="学习任务" {% if task.category == '学习任务' %}selected{% endif %}>学习任务</option>
+            <option value="生活习惯" {% if task.category == '生活习惯' %}selected{% endif %}>生活习惯</option>
+            <option value="品德行为" {% if task.category == '品德行为' %}selected{% endif %}>品德行为</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            <input type="checkbox" name="is_active" {% if task.is_active %}checked{% endif %}>
+            启用此任务
+        </label>
+    </div>
+    
+    <button type="submit" class="button">保存修改</button>
+</form>
+
+<a href="{{ url_for('main.list_tasks') }}" class="button">取消</a>
+{% endblock %}

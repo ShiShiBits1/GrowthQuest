@@ -17,6 +17,14 @@
         <label for="points">奖励积分</label>
         <input type="number" id="points" name="points" min="1" required>
     </div>
+    <div class="form-group">
+        <label for="category">任务分类</label>
+        <select id="category" name="category" required>
+            <option value="学习任务">学习任务</option>
+            <option value="生活习惯">生活习惯</option>
+            <option value="品德行为">品德行为</option>
+        </select>
+    </div>
     <button type="submit" class="button">添加</button>
 </form>
 {% endblock %}

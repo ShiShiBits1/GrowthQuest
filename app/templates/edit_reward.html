@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}编辑奖励{% endblock %}
+
+{% block content %}
+<h1>编辑奖励</h1>
+<form method="post">
+    <div class="form-group">
+        <label for="name">奖励名称</label>
+        <input type="text" id="name" name="name" value="{{ reward.name }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">奖励描述</label>
+        <textarea id="description" name="description">{{ reward.description }}</textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="cost">所需积分</label>
+        <input type="number" id="cost" name="cost" value="{{ reward.cost }}" min="1" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="level">奖励等级</label>
+        <select id="level" name="level" required>
+            <option value="小奖励" {% if reward.level == '小奖励' %}selected{% endif %}>小奖励 (20-50分)</option>
+            <option value="中奖励" {% if reward.level == '中奖励' %}selected{% endif %}>中奖励 (50-100分)</option>
+            <option value="大奖励" {% if reward.level == '大奖励' %}selected{% endif %}>大奖励 (100分以上)</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            <input type="checkbox" name="is_active" {% if reward.is_active %}checked{% endif %}>
+            启用此奖励
+        </label>
+    </div>
+    
+    <button type="submit" class="button">保存修改</button>
+</form>
+
+<a href="{{ url_for('main.list_rewards') }}" class="button">取消</a>
+{% endblock %}
