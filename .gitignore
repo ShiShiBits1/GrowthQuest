@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+venv/
+
+# 数据库文件
+*.sqlite
+*.db
+instance/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件
+*.log
+logs/
