@@ -166,3 +166,29 @@ def redeem_reward(child_id, reward_id):
     else:
         flash('积分不足')
     return redirect(url_for('main.child_detail', child_id=child_id))
+
+# 删除孩子
+@main.route('/child/delete/<int:child_id>', methods=['POST'])
+@login_required
+def delete_child(child_id):
+    try:
+        child = Child.query.get_or_404(child_id)
+        # 确保是当前用户的孩子
+        if child.parent != current_user:
+            flash('无权操作')
+            return redirect(url_for('main.list_children'))
+        
+        # 删除相关记录
+        # 先删除任务记录
+        TaskRecord.query.filter_by(child_id=child_id).delete()
+        # 再删除奖励记录
+        RewardRecord.query.filter_by(child_id=child_id).delete()
+        # 最后删除孩子
+        db.session.delete(child)
+        db.session.commit()
+        flash('孩子信息已删除')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除失败: {str(e)}')
+    
+    return redirect(url_for('main.list_children'))
