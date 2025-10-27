@@ -55,16 +55,16 @@
         <div class="streaks-section">
             <h3>🔥 连续完成进度</h3>
             <div class="streaks-container">
-                {% set has_active_streaks = false %}
+                <!-- 使用过滤器来检查是否有活跃的连续记录 -->
+                {% set active_streaks = [] %}
                 {% for streak in child_info.streaks %}
                     {% if streak.current_streak > 0 or streak.longest_streak > 0 %}
-                        {% set has_active_streaks = true %}
+                        {% set _ = active_streaks.append(streak) %}
                     {% endif %}
                 {% endfor %}
                 
-                {% if has_active_streaks %}
-                    {% for streak in child_info.streaks %}
-                    {% if streak.current_streak > 0 or streak.longest_streak > 0 %}
+                {% if active_streaks %}
+                    {% for streak in active_streaks %}
                     <div class="streak-card">
                         <div class="streak-header">
                             <span class="task-name">{{ streak.task.name }}</span>
@@ -74,7 +74,12 @@
                             <div class="progress-bar">
                                 {% set next_badge = child_info.next_badges.get(streak.task_id) %}
                                 {% if next_badge %}
-                                <div class="progress-fill" style="width: {{ min(streak.current_streak / next_badge.days_required * 100, 100) }}%"></div>
+                                {% set progress_width = streak.current_streak / next_badge.days_required * 100 %}
+                                {% if progress_width > 100 %}
+                                <div class="progress-fill" style="width: 100%"></div>
+                                {% else %}
+                                <div class="progress-fill" style="width: {{ progress_width }}%"></div>
+                                {% endif %}
                                 {% else %}
                                 <div class="progress-fill" style="width: 100%; background-color: #4CAF50;"></div>
                                 {% endif %}
@@ -94,7 +99,6 @@
                             最高连续记录：{{ streak.longest_streak }} 天
                         </div>
                     </div>
-                    {% endif %}
                     {% endfor %}
                 {% else %}
                 <p class="no-streaks">还没有开始任何任务的连续挑战</p>
