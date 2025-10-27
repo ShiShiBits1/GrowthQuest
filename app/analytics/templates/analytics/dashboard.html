@@ -45,37 +45,37 @@
             <!-- 概览卡片 - 水平布局在一行 -->
             <div class="row mb-6">
                 <div class="col-md-3">
-                    <div class="card text-center p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="mb-2"><i class="fas fa-user-circle text-3xl opacity-90"></i></div>
+                    <div class="feature-card">
+                        <div class="mb-2"><i class="fas fa-user-circle text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">{{ selected_child.name }}</h3>
-                        <p class="text-sm opacity-90 mb-1">当前积分</p>
-                        <h1 class="display-4 font-bold">{{ selected_child.points }}</h1>
+                        <p class="text-gray-700 mb-1">当前积分</p>
+                        <h1 class="display-4 font-bold text-orange-700">{{ selected_child.points }}</h1>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-center p-5 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="mb-2"><i class="fas fa-tasks text-3xl opacity-90"></i></div>
+                    <div class="feature-card">
+                        <div class="mb-2"><i class="fas fa-tasks text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">任务完成率</h3>
-                        <p class="text-sm opacity-90 mb-1">
+                        <p class="text-gray-700 mb-1">
                             完成 {{ completion_rate_data.completed_tasks }} / {{ completion_rate_data.total_active_tasks }}
                         </p>
-                        <h1 class="display-4 font-bold">{{ "%.1f"|format(completion_rate_data.completion_rate) }}%</h1>
+                        <h1 class="display-4 font-bold text-orange-700">{{ "%.1f"|format(completion_rate_data.completion_rate) }}%</h1>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-center p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="mb-2"><i class="fas fa-medal text-3xl opacity-90"></i></div>
+                    <div class="feature-card">
+                        <div class="mb-2"><i class="fas fa-medal text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">获得勋章</h3>
-                        <p class="text-sm opacity-90 mb-1">累计勋章数量</p>
-                        <h1 class="display-4 font-bold">{{ badge_stats.total_badges }}</h1>
+                        <p class="text-gray-700 mb-1">累计勋章数量</p>
+                        <h1 class="display-4 font-bold text-orange-700">{{ badge_stats.total_badges }}</h1>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card text-center p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <div class="mb-2"><i class="fas fa-fire text-3xl opacity-90"></i></div>
+                    <div class="feature-card">
+                        <div class="mb-2"><i class="fas fa-fire text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">最长连续</h3>
-                        <p class="text-sm opacity-90 mb-1">任务连续完成天数</p>
-                        <h1 class="display-4 font-bold">{{ streak_stats.max_streak }}</h1>
+                        <p class="text-gray-700 mb-1">任务连续完成天数</p>
+                        <h1 class="display-4 font-bold text-orange-700">{{ streak_stats.max_streak }}</h1>
                     </div>
                 </div>
             </div>
@@ -84,45 +84,41 @@
             <div class="row mb-6">
                 <!-- 任务分类分布饼图 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
-                            <h5 class="font-medium text-gray-800">任务分类分布</h5>
-                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='tasks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                    <div class="feature-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-lg font-semibold">任务分类分布</h3>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='tasks') }}" class="button btn-sm text-sm">查看详情</a>
                         </div>
-                        <div class="card-body">
-                            {% if category_distribution %}
-                            <div class="chart-container" style="height: 300px;">
-                                <canvas id="categoryChart"></canvas>
-                            </div>
-                            {% else %}
-                            <div class="text-center text-muted py-10">
-                                <i class="fas fa-chart-pie text-4xl text-gray-300 mb-3"></i>
-                                <p>暂无分类数据</p>
-                            </div>
-                            {% endif %}
+                        {% if category_distribution %}
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="categoryChart"></canvas>
                         </div>
+                        {% else %}
+                        <div class="text-center text-muted py-10">
+                            <i class="fas fa-chart-pie text-4xl text-gray-300 mb-3"></i>
+                            <p>暂无分类数据</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
                 <!-- 积分获取趋势 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
-                            <h5 class="font-medium text-gray-800">积分获取趋势</h5>
-                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='points') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                    <div class="feature-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-lg font-semibold">积分获取趋势</h3>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='points') }}" class="button btn-sm text-sm">查看详情</a>
                         </div>
-                        <div class="card-body">
-                            {% if points_trend_data %}
-                            <div class="chart-container" style="height: 300px;">
-                                <canvas id="pointsTrendChart"></canvas>
-                            </div>
-                            {% else %}
-                            <div class="text-center text-muted py-10">
-                                <i class="fas fa-chart-line text-4xl text-gray-300 mb-3"></i>
-                                <p>暂无积分趋势数据</p>
-                            </div>
-                            {% endif %}
+                        {% if points_trend_data %}
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="pointsTrendChart"></canvas>
                         </div>
+                        {% else %}
+                        <div class="text-center text-muted py-10">
+                            <i class="fas fa-chart-line text-4xl text-gray-300 mb-3"></i>
+                            <p>暂无积分趋势数据</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -131,37 +127,35 @@
             <div class="row">
                 <!-- 连续完成情况 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
-                            <h5 class="font-medium text-gray-800">任务连续完成情况</h5>
-                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='streaks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                    <div class="feature-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-lg font-semibold">任务连续完成情况</h3>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='streaks') }}" class="button btn-sm text-sm">查看详情</a>
                         </div>
-                        <div class="card-body">
-                            {% if streak_stats.streaks %}
-                            <div class="chart-container" style="height: 250px; margin-bottom: 20px;">
-                                <canvas id="streakChart"></canvas>
-                            </div>
-                            <ul class="list-group rounded-lg overflow-hidden">
-                                {% for streak in streak_stats.streaks %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div>
-                                        <strong class="text-gray-800">{{ streak.task.name }}</strong>
-                                        <p class="text-sm text-gray-600 mb-0">{{ streak.get_status_description() }}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-sm font-medium 
-                                        {% if streak.is_active() %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-700{% endif %}">
-                                        {{ streak.current_streak }} 天
-                                    </span>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                            {% else %}
-                            <div class="text-center text-muted py-10">
-                                <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
-                                <p>暂无连续任务记录</p>
-                            </div>
-                            {% endif %}
+                        {% if streak_stats.streaks %}
+                        <div class="chart-container" style="height: 250px; margin-bottom: 20px;">
+                            <canvas id="streakChart"></canvas>
                         </div>
+                        <ul class="mb-0">
+                            {% for streak in streak_stats.streaks %}
+                            <li class="d-flex justify-content-between align-items-center pb-2 mb-2 border-b border-gray-200">
+                                <div>
+                                    <strong class="text-gray-800">{{ streak.task.name }}</strong>
+                                    <p class="text-sm text-gray-600 mb-0">{{ streak.get_status_description() }}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium 
+                                    {% if streak.is_active() %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ streak.current_streak }} 天
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="text-center text-muted py-10">
+                            <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
+                            <p>暂无连续任务记录</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 <script>
@@ -205,74 +199,70 @@
                 
                 <!-- 习惯养成时间线图表 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header bg-white rounded-t-lg border-b">
-                            <h5 class="font-medium text-gray-800">习惯养成趋势</h5>
+                    <div class="feature-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-lg font-semibold">习惯养成趋势</h3>
                         </div>
-                        <div class="card-body">
-                            {% if habit_timeline %}
-                            <div class="chart-container" style="height: 300px;">
-                                <canvas id="habitTrendChart"></canvas>
-                            </div>
-                            {% else %}
-                            <div class="text-center text-muted py-10">
-                                <i class="fas fa-calendar-alt text-4xl text-gray-300 mb-3"></i>
-                                <p>暂无习惯养成数据</p>
-                            </div>
-                            {% endif %}
+                        {% if habit_timeline %}
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="habitTrendChart"></canvas>
                         </div>
+                        {% else %}
+                        <div class="text-center text-muted py-10">
+                            <i class="fas fa-calendar-alt text-4xl text-gray-300 mb-3"></i>
+                            <p>暂无习惯养成数据</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
                 <!-- 勋章统计 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
-                            <h5 class="font-medium text-gray-800">勋章统计</h5>
-                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='badges') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                    <div class="feature-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-lg font-semibold">勋章统计</h3>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='badges') }}" class="button btn-sm text-sm">查看详情</a>
                         </div>
-                        <div class="card-body">
-                            {% if badge_stats.total_badges > 0 %}
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h6 class="font-medium text-gray-700 mb-3">按等级分布</h6>
-                                    <ul class="list-group rounded-lg overflow-hidden">
-                                        {% for level_data in badge_stats.badges_by_level %}
-                                        <li class="list-group-item d-flex justify-content-between items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors">
-                                            <span class="font-medium">等级 {{ level_data.level }}</span>
-                                            <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
-                                                {{ level_data.count }}
-                                            </span>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                <div class="col-sm-6">
-                                    <h6 class="font-medium text-gray-700 mb-3">最近获得</h6>
-                                    <div class="badge-list">
-                                        {% for child_badge in badge_stats.recent_badges %}
-                                        <div class="badge-item mb-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                                            <div class="flex items-center">
-                                                <span class="badge-icon text-2xl mr-3">{{ child_badge.badge.icon }}</span>
-                                                <div class="flex-1">
-                                                    <span class="badge-name font-medium text-gray-800">{{ child_badge.badge.name }}</span>
-                                                    <span class="badge-date text-xs text-gray-500 block">
-                                                        {{ child_badge.earned_at.strftime('%Y-%m-%d') }}
-                                                    </span>
-                                                </div>
+                        {% if badge_stats.total_badges > 0 %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <h6 class="font-medium text-gray-700 mb-3">按等级分布</h6>
+                                <ul class="list-group rounded-lg overflow-hidden">
+                                    {% for level_data in badge_stats.badges_by_level %}
+                                    <li class="list-group-item d-flex justify-content-between items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+                                        <span class="font-medium">等级 {{ level_data.level }}</span>
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                                            {{ level_data.count }}
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-sm-6">
+                                <h6 class="font-medium text-gray-700 mb-3">最近获得</h6>
+                                <div class="badge-list">
+                                    {% for child_badge in badge_stats.recent_badges %}
+                                    <div class="badge-item mb-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                        <div class="flex items-center">
+                                            <span class="badge-icon text-2xl mr-3">{{ child_badge.badge.icon }}</span>
+                                            <div class="flex-1">
+                                                <span class="badge-name font-medium text-gray-800">{{ child_badge.badge.name }}</span>
+                                                <span class="badge-date text-xs text-gray-500 block">
+                                                    {{ child_badge.earned_at.strftime('%Y-%m-%d') }}
+                                                </span>
                                             </div>
                                         </div>
-                                        {% endfor %}
                                     </div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            {% else %}
-                            <div class="text-center text-muted py-10">
-                                <i class="fas fa-award text-4xl text-gray-300 mb-3"></i>
-                                <p>暂未获得勋章</p>
-                            </div>
-                            {% endif %}
                         </div>
+                        {% else %}
+                        <div class="text-center text-muted py-10">
+                            <i class="fas fa-award text-4xl text-gray-300 mb-3"></i>
+                            <p>暂未获得勋章</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
