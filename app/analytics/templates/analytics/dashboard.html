@@ -40,18 +40,18 @@
                 </div>
             </div>
             
-            <!-- 概览卡片 -->
+            <!-- 概览卡片 - 水平布局在一行 -->
             <div class="row mb-6">
-                <div class="col-md-3 mb-4">
-                    <div class="card text-center p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div class="col-md-3">
+                    <div class="card text-center p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div class="mb-2"><i class="fas fa-user-circle text-3xl opacity-90"></i></div>
                         <h3 class="text-lg font-semibold">{{ selected_child.name }}</h3>
                         <p class="text-sm opacity-90 mb-1">当前积分</p>
                         <h1 class="display-4 font-bold">{{ selected_child.points }}</h1>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
-                    <div class="card text-center p-5 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div class="col-md-3">
+                    <div class="card text-center p-5 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div class="mb-2"><i class="fas fa-tasks text-3xl opacity-90"></i></div>
                         <h3 class="text-lg font-semibold">任务完成率</h3>
                         <p class="text-sm opacity-90 mb-1">
@@ -60,16 +60,16 @@
                         <h1 class="display-4 font-bold">{{ "%.1f"|format(completion_rate_data.completion_rate) }}%</h1>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
-                    <div class="card text-center p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div class="col-md-3">
+                    <div class="card text-center p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div class="mb-2"><i class="fas fa-medal text-3xl opacity-90"></i></div>
                         <h3 class="text-lg font-semibold">获得勋章</h3>
                         <p class="text-sm opacity-90 mb-1">累计勋章数量</p>
                         <h1 class="display-4 font-bold">{{ badge_stats.total_badges }}</h1>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
-                    <div class="card text-center p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div class="col-md-3">
+                    <div class="card text-center p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg rounded-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div class="mb-2"><i class="fas fa-fire text-3xl opacity-90"></i></div>
                         <h3 class="text-lg font-semibold">最长连续</h3>
                         <p class="text-sm opacity-90 mb-1">任务连续完成天数</p>
@@ -82,8 +82,8 @@
             <div class="row mb-6">
                 <!-- 任务分类分布饼图 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
                             <h5 class="font-medium text-gray-800">任务分类分布</h5>
                             <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='tasks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
                         </div>
@@ -104,8 +104,8 @@
                 
                 <!-- 积分获取趋势 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
                             <h5 class="font-medium text-gray-800">积分获取趋势</h5>
                             <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='points') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
                         </div>
@@ -129,8 +129,8 @@
             <div class="row">
                 <!-- 连续完成情况 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
                             <h5 class="font-medium text-gray-800">任务连续完成情况</h5>
                             <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='streaks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
                         </div>
@@ -203,8 +203,8 @@
                 
                 <!-- 习惯养成时间线图表 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header bg-white rounded-t-xl border-b">
+                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header bg-white rounded-t-lg border-b">
                             <h5 class="font-medium text-gray-800">习惯养成趋势</h5>
                         </div>
                         <div class="card-body">
@@ -224,8 +224,8 @@
                 
                 <!-- 勋章统计 -->
                 <div class="col-md-6 mb-4">
-                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                    <div class="card shadow-md rounded-lg border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-lg border-b">
                             <h5 class="font-medium text-gray-800">勋章统计</h5>
                             <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='badges') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
                         </div>
