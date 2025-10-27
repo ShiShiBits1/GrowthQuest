@@ -451,7 +451,7 @@ def confirm_task_record(record_id):
         streak = TaskStreak.query.filter_by(child_id=record.child_id, task_id=record.task_id).first()
         
         if not streak:
-            # 创建新的连续记录
+            # 创建新的连续记录，确保初始化为1天
             streak = TaskStreak(
                 child_id=record.child_id,
                 task_id=record.task_id,
@@ -460,6 +460,21 @@ def confirm_task_record(record_id):
                 longest_streak=1
             )
             db.session.add(streak)
+            # 确保任务有对应的勋章
+            existing_badge = Badge.query.filter_by(task_id=record.task_id).first()
+            if not existing_badge:
+                # 为该任务创建默认勋章
+                badge = Badge(
+                    name=f"{record.task.name}坚持达人",
+                    description=f"连续30天完成{record.task.name}任务，获得此勋章！",
+                    icon="🏆",
+                    task_id=record.task_id,
+                    days_required=30,
+                    level="初级",
+                    points_reward=10
+                )
+                db.session.add(badge)
+                flash(f"系统已为任务 '{record.task.name}' 自动创建了勋章！")
         else:
             # 计算与上一次完成的日期差
             if streak.last_completed_date:
@@ -542,7 +557,7 @@ def edit_task_record(record_id):
             
             # 转换日期字符串为datetime对象
             from datetime import datetime
-            completed_at = datetime.strptime(date_str, '%Y-%m-%d')
+            completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             
             # 获取新任务信息
             new_task = Task.query.get_or_404(task_id)
@@ -568,9 +583,9 @@ def edit_task_record(record_id):
             flash(f'更新任务记录时发生错误：{str(e)}')
             db.session.rollback()
     
-    # 准备默认日期
+    # 准备默认日期时间
     from datetime import datetime
-    default_date = record.completed_at.strftime('%Y-%m-%d')
+    default_date = record.completed_at.strftime('%Y-%m-%dT%H:%M')
     
     return render_template('edit_task_record.html', record=record, tasks=tasks, default_date=default_date)
 
@@ -654,7 +669,7 @@ def add_points():
             
             # 转换日期字符串为datetime对象
             from datetime import datetime
-            completed_at = datetime.strptime(date_str, '%Y-%m-%d')
+            completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             
             # 创建任务记录
             task_record = TaskRecord(
@@ -684,9 +699,9 @@ def add_points():
             db.session.rollback()
             return redirect(url_for('main.add_points'))
     
-    # 获取当前日期，用于默认值
+    # 获取当前日期时间，用于默认值
     from datetime import datetime
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y-%m-%dT%H:%M')
     
     return render_template('add_points.html', children=children, tasks=tasks, today=today)
 
