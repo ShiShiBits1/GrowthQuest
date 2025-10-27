@@ -55,8 +55,16 @@
         <div class="streaks-section">
             <h3>🔥 连续完成进度</h3>
             <div class="streaks-container">
-                {% if child_info.streaks %}
+                {% set has_active_streaks = false %}
+                {% for streak in child_info.streaks %}
+                    {% if streak.current_streak > 0 or streak.longest_streak > 0 %}
+                        {% set has_active_streaks = true %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if has_active_streaks %}
                     {% for streak in child_info.streaks %}
+                    {% if streak.current_streak > 0 or streak.longest_streak > 0 %}
                     <div class="streak-card">
                         <div class="streak-header">
                             <span class="task-name">{{ streak.task.name }}</span>
@@ -75,8 +83,10 @@
                                 {% set next_badge = child_info.next_badges.get(streak.task_id) %}
                                 {% if next_badge %}
                                 距离获得「{{ next_badge.name }}」勋章还需 {{ next_badge.days_required - streak.current_streak }} 天
-                                {% else %}
+                                {% elif streak.longest_streak > 0 %}
                                 已达到最高连续天数！🎉
+                                {% else %}
+                                开始连续完成任务，获得勋章奖励！
                                 {% endif %}
                             </div>
                         </div>
@@ -84,6 +94,7 @@
                             最高连续记录：{{ streak.longest_streak }} 天
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 {% else %}
                 <p class="no-streaks">还没有开始任何任务的连续挑战</p>

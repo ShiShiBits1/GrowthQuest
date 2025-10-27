@@ -86,6 +86,15 @@
             background-color: #f5f5f5;
         }
         
+        /* 图标容器样式 - 确保卡片高度一致 */
+        .icon-container {
+            height: 48px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         /* 响应式设计 */
         @media (max-width: 768px) {
             .container {
@@ -238,6 +247,79 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             margin-bottom: 28px;
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            /* 确保卡片大小一致 */
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* 防止任何元素从卡片中溢出 */
+            z-index: 1;
+        }
+        /* 强制隐藏所有可能的checkbox或小方框元素 */
+        .feature-card input[type="checkbox"],
+        .feature-card input[type="radio"],
+        .feature-card .form-check-input {
+            display: none !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            z-index: -1 !important;
+            width: 0 !important;
+            height: 0 !important;
+            pointer-events: none !important;
+        }
+        /* 确保没有任何元素默认显示在左上角 */
+        .feature-card::before,
+        .feature-card::after {
+            content: none !important;
+        }
+        
+        /* 完全隐藏卡片内的所有checkbox或类似元素 */
+        .feature-card *:first-child {
+            position: static !important;
+        }
+        
+        /* 确保没有任何未知元素显示 */
+        .feature-card input,
+        .feature-card label,
+        .feature-card input[type="checkbox"] {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            z-index: -1 !important;
+        }
+        /* 确保卡片内的所有元素都在正确的位置 */
+        .feature-card > * {
+            position: relative;
+            z-index: 1;
+        }
+        /* 确保卡片之间有足够的间距 */
+        .card-section {
+            margin-top: 30px;
+        }
+        /* 概览区域特殊样式 */
+        .overview-section {
+            margin-top: 40px !important;
+        }
+        .overview-section .row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+        }
+        .overview-section .col-md-3 {
+            flex: 1;
+            padding: 0 10px;
+        }
+        /* 确保选择区域和概览区域之间有足够的间距 */
+        .overview-section {
+            margin-top: 40px !important;
+        }
+        /* 选择区域样式优化 */
+        .card.shadow-sm.p-4.mb-6.rounded-lg.border-0 {
+            margin-bottom: 40px !important;
         }
         .button.delete {
             background-color: #dc3545;
@@ -267,6 +349,19 @@
         /* 增加行与行之间的间距 */
         .row {
             margin-bottom: 32px;
+            /* 确保水平布局正确 */
+            display: flex;
+            flex-wrap: wrap;
+        }
+        /* 确保列之间有足够的间距 */
+        .row > .col-md-3,
+        .row > .col-md-6 {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        /* 确保概览卡片区域有足够的顶部间距 */
+        .overview-section {
+            margin-top: 40px;
         }
         
         /* 优化容器内边距 */

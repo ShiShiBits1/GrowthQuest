@@ -484,6 +484,9 @@ def confirm_task_record(record_id):
             # 获取该任务的所有勋章（按天数要求从低到高排序）
             badges = Badge.query.filter_by(task_id=record.task_id).order_by(Badge.days_required).all()
             
+            # 记录是否有新勋章被颁发
+            new_badge_earned = False
+            
             for badge in badges:
                 # 检查是否已经获得该勋章
                 existing_badge = ChildBadge.query.filter_by(child_id=record.child_id, badge_id=badge.id).first()
@@ -496,26 +499,22 @@ def confirm_task_record(record_id):
                     
                     # 给予积分奖励
                     record.child.points += badge.points_reward
-                    flash(f"🎉 {record.child.name} 获得了 {badge.name}！额外奖励 {badge.points_reward} 积分！")
-                    break  # 一旦颁发了一个勋章，就退出循环，避免同一天多次颁发
-        
-        # 检查是否达到获得勋章的条件
-        badges = Badge.query.filter_by(task_id=record.task_id).all()
-        for badge in badges:
-            # 检查是否已经获得过这个勋章
-            existing_badge = ChildBadge.query.filter_by(
-                child_id=record.child_id,
-                badge_id=badge.id
-            ).first()
+                    flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                    new_badge_earned = True
             
-            if not existing_badge and streak.current_streak >= badge.days_required:
-                # 颁发勋章
-                child_badge = ChildBadge(
-                    child_id=record.child_id,
-                    badge_id=badge.id
-                )
-                db.session.add(child_badge)
-                flash(f'🎉 恭喜！{record.child.name}获得了「{badge.name}」勋章！')
+            # 如果没有新勋章被颁发但连续天数有更新，也显示进度更新信息
+            if not new_badge_earned and streak.current_streak > 0:
+                # 查找该任务的下一个勋章
+                next_badge = Badge.query.filter(
+                    Badge.task_id == record.task_id,
+                    Badge.days_required > streak.current_streak
+                ).order_by(Badge.days_required).first()
+                
+                if next_badge:
+                    days_remaining = next_badge.days_required - streak.current_streak
+                    flash(f"🔥 {record.child.name} 已连续完成 {record.task.name} {streak.current_streak} 天，距离获得「{next_badge.name}」勋章还需 {days_remaining} 天！")
+                else:
+                    flash(f"🎉 {record.child.name} 已连续完成 {record.task.name} {streak.current_streak} 天，已达到最高连续记录！")
         
         db.session.commit()
         flash('任务已确认，积分已发放')

@@ -43,10 +43,10 @@
             </div>
             
             <!-- 概览卡片 - 水平布局在一行 -->
-            <div class="row mb-6">
+            <div class="row overview-section mb-6">
                 <div class="col-md-3">
                     <div class="feature-card">
-                        <div class="mb-2"><i class="fas fa-user-circle text-3xl text-orange-600"></i></div>
+                        <div style="height: 48px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-user-circle text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">{{ selected_child.name }}</h3>
                         <p class="text-gray-700 mb-1">当前积分</p>
                         <h1 class="display-4 font-bold text-orange-700">{{ selected_child.points }}</h1>
@@ -54,7 +54,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="feature-card">
-                        <div class="mb-2"><i class="fas fa-tasks text-3xl text-orange-600"></i></div>
+                        <div style="height: 48px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-tasks text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">任务完成率</h3>
                         <p class="text-gray-700 mb-1">
                             完成 {{ completion_rate_data.completed_tasks }} / {{ completion_rate_data.total_active_tasks }}
@@ -64,7 +64,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="feature-card">
-                        <div class="mb-2"><i class="fas fa-medal text-3xl text-orange-600"></i></div>
+                        <div style="height: 48px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-trophy text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">获得勋章</h3>
                         <p class="text-gray-700 mb-1">累计勋章数量</p>
                         <h1 class="display-4 font-bold text-orange-700">{{ badge_stats.total_badges }}</h1>
@@ -72,7 +72,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="feature-card">
-                        <div class="mb-2"><i class="fas fa-fire text-3xl text-orange-600"></i></div>
+                        <div style="height: 48px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa fa-fire text-3xl text-orange-600"></i></div>
                         <h3 class="text-lg font-semibold">最长连续</h3>
                         <p class="text-gray-700 mb-1">任务连续完成天数</p>
                         <h1 class="display-4 font-bold text-orange-700">{{ streak_stats.max_streak }}</h1>
