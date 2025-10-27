@@ -98,6 +98,7 @@ class Badge(db.Model):
     description = db.Column(db.Text)  # 勋章描述
     icon = db.Column(db.String(64), default='🌟')  # 勋章图标，默认使用emoji
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)  # 关联的任务
+    task = db.relationship('Task', backref='badges', lazy='joined')  # 添加与Task的关联关系
     days_required = db.Column(db.Integer, default=30)  # 连续完成天数要求
     level = db.Column(db.String(32), nullable=False, default='初级')  # 勋章等级：初级、中级、高级、毕业
     points_reward = db.Column(db.Integer, default=10)  # 获得勋章奖励的积分
@@ -228,7 +229,7 @@ def add_analysis_methods(cls):
         unearned_count = len(all_badges) - earned_count
         
         # 按等级统计勋章（替代badge_type，因为当前模型没有badge_type字段）
-        badges_by_level = db.session.query(
+        badges_by_level_query = db.session.query(
             Badge.level,
             func.count(ChildBadge.id).label('earned_count'),
             func.count(Badge.id).label('total_count')
@@ -239,23 +240,97 @@ def add_analysis_methods(cls):
             )
         ).group_by(Badge.level).all()
         
+        # 将Row对象转换为字典，使其可以JSON序列化
+        badges_by_level = [
+            {
+                'level': row.level,
+                'earned_count': row.earned_count,
+                'total_count': row.total_count
+            }
+            for row in badges_by_level_query
+        ]
+        
         # 最近获得的勋章（时间范围内）
-        recent_badges_in_period = ChildBadge.query.filter_by(child_id=child_id).filter(
+        recent_badges_query = ChildBadge.query.filter_by(child_id=child_id).filter(
             ChildBadge.earned_at >= start_date
         ).order_by(ChildBadge.earned_at.desc()).all()
         
+        # 将ChildBadge对象转换为可序列化的字典
+        recent_badges_in_period = [
+            {
+                'id': badge.id,
+                'badge_id': badge.badge_id,
+                'badge_name': badge.badge.name,
+                'badge_level': badge.badge.level,
+                'earned_at': badge.earned_at.isoformat()
+            }
+            for badge in recent_badges_query
+        ]
+        
         # 勋章获取趋势（按月统计） - 使用SQLite兼容的strftime函数
-        badge_acquisition_trend = db.session.query(
+        badge_trend_query = db.session.query(
             func.strftime('%Y-%m', ChildBadge.earned_at).label('month'),
             func.count(ChildBadge.id).label('badge_count')
         ).filter(
             ChildBadge.child_id == child_id
         ).group_by(func.strftime('%Y-%m', ChildBadge.earned_at)).order_by('month').all()
         
+        # 将Row对象转换为字典，使其可以JSON序列化
+        badge_acquisition_trend = [
+            {
+                'month': row.month,
+                'badge_count': row.badge_count
+            }
+            for row in badge_trend_query
+        ]
+        
         # 找出最接近获得的未获得勋章 - 基于任务完成情况的智能分析
         closest_badges = cls._find_closest_badges(child_id, all_badges, earned_badge_ids)
         
         # 格式化返回数据，确保数据结构清晰一致
+        # 将closest_badges转换为可序列化的字典
+        closest_badges_serializable = [
+            {
+                'id': badge.id,
+                'name': badge.name,
+                'task_id': badge.task_id,
+                'task_name': badge.task.name if badge.task else '',
+                'days_required': badge.days_required,
+                'level': badge.level,
+                'points_reward': badge.points_reward,
+                'progress': getattr(badge, 'progress', 0),
+                'current_streak': getattr(badge, 'current_streak', 0)
+            }
+            for badge in closest_badges[:5]  # 限制返回数量
+        ]
+        
+        # 将all_badges转换为可序列化的字典
+        all_badges_serializable = [
+            {
+                'id': badge.id,
+                'name': badge.name,
+                'task_id': badge.task_id,
+                'task_name': badge.task.name if badge.task else '',
+                'days_required': badge.days_required,
+                'level': badge.level,
+                'points_reward': badge.points_reward,
+                'is_earned': badge.id in earned_badge_ids
+            }
+            for badge in all_badges
+        ]
+        
+        # 将earned_badges转换为可序列化的字典
+        earned_badges_serializable = [
+            {
+                'id': child_badge.id,
+                'badge_id': child_badge.badge_id,
+                'badge_name': child_badge.badge.name,
+                'badge_level': child_badge.badge.level,
+                'earned_at': child_badge.earned_at.isoformat()
+            }
+            for child_badge in earned_badges
+        ]
+        
         return {
             'earned_count': earned_count,
             'unearned_count': unearned_count,
@@ -263,9 +338,9 @@ def add_analysis_methods(cls):
             'badges_by_level': badges_by_level,  # 重命名为更准确的字段名
             'recent_badges_in_period': recent_badges_in_period,
             'badge_acquisition_trend': badge_acquisition_trend,
-            'closest_badges': closest_badges[:5],  # 限制返回数量
-            'all_badges': all_badges,
-            'earned_badges': earned_badges,
+            'closest_badges': closest_badges_serializable,
+            'all_badges': all_badges_serializable,
+            'earned_badges': earned_badges_serializable,
             'days_analyzed': days
         }
     
@@ -484,6 +559,7 @@ def add_analysis_methods(cls):
     cls.get_streak_statistics = get_streak_statistics
     cls.get_badge_statistics = get_badge_statistics
     cls.get_detailed_badge_analysis = get_detailed_badge_analysis
+    cls._find_closest_badges = _find_closest_badges
     cls.get_task_completion_rate = get_task_completion_rate
     cls.get_task_category_distribution = get_task_category_distribution
     cls.get_category_completion_stats = get_category_completion_stats
