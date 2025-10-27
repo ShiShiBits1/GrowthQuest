@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from app.models import User, Child, Task, Reward, TaskRecord, RewardRecord
+from app.models import User, Child, Task, Reward, TaskRecord, RewardRecord, Badge, ChildBadge, TaskStreak, TaskCategory
 from app.main import main
 
 # 登录路由
@@ -12,23 +12,31 @@ def login():
         print('登录路由被访问')
         if current_user.is_authenticated:
             print('用户已认证，重定向到仪表盘')
-            return redirect(url_for('main.dashboard'))
+            # 根据用户类型决定重定向目标
+            if hasattr(current_user, 'children'):  # 家长用户
+                return redirect(url_for('main.dashboard'))
+            else:  # 孩子用户
+                return redirect(url_for('main.child_dashboard'))
         
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
             print(f'接收到登录请求，用户名: {username}')
             
-            # 测试数据库连接
-            print('尝试连接数据库...')
-            users = User.query.all()
-            print(f'数据库连接成功，发现 {len(users)} 个用户')
-            
+            # 先尝试查找家长用户
             user = User.query.filter_by(username=username).first()
             if user and check_password_hash(user.password, password):
                 login_user(user)
-                print('登录成功，重定向到仪表盘')
+                print('家长登录成功，重定向到仪表盘')
                 return redirect(url_for('main.dashboard'))
+            
+            # 再尝试查找孩子用户
+            child = Child.query.filter_by(username=username).first()
+            if child and check_password_hash(child.password, password):
+                login_user(child)
+                print('孩子登录成功，重定向到孩子仪表盘')
+                return redirect(url_for('main.child_dashboard'))
+            
             flash('用户名或密码错误')
             print('登录失败：用户名或密码错误')
         
@@ -38,6 +46,52 @@ def login():
         import traceback
         print(traceback.format_exc())
         return f'发生错误: {str(e)}', 500
+
+# 修改密码路由
+@main.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    try:
+        if request.method == 'POST':
+            old_password = request.form['old_password']
+            new_password = request.form['new_password']
+            confirm_password = request.form['confirm_password']
+            
+            # 检查新旧密码是否相同
+            if new_password == old_password:
+                flash('新密码不能与原密码相同', 'error')
+                return redirect(url_for('main.change_password'))
+            
+            # 检查两次输入的新密码是否一致
+            if new_password != confirm_password:
+                flash('两次输入的新密码不一致', 'error')
+                return redirect(url_for('main.change_password'))
+            
+            # 检查原密码是否正确
+            if not check_password_hash(current_user.password, old_password):
+                flash('原密码错误', 'error')
+                return redirect(url_for('main.change_password'))
+            
+            # 更新密码
+            from werkzeug.security import generate_password_hash
+            current_user.password = generate_password_hash(new_password)
+            db.session.commit()
+            
+            flash('密码修改成功', 'success')
+            
+            # 根据用户类型重定向
+            if hasattr(current_user, 'children'):  # 家长用户
+                return redirect(url_for('main.dashboard'))
+            else:  # 孩子用户
+                return redirect(url_for('main.child_dashboard'))
+        
+        return render_template('change_password.html')
+    except Exception as e:
+        print(f'修改密码路由发生异常: {str(e)}')
+        import traceback
+        print(traceback.format_exc())
+        flash('修改密码时发生错误', 'error')
+        return redirect(url_for('main.change_password'))
 
 # 登出路由
 @main.route('/logout')
@@ -50,23 +104,66 @@ def logout():
 @main.route('/')
 @login_required
 def dashboard():
+    # 家长仪表盘
+    if not hasattr(current_user, 'children'):  # 如果是孩子用户访问
+        return redirect(url_for('main.child_dashboard'))
     # 仪表盘现在显示规则说明，不再需要传递children数据
     return render_template('dashboard.html')
+
+# 孩子仪表盘路由
+@main.route('/child_dashboard')
+@login_required
+def child_dashboard():
+    # 确保是孩子用户
+    if hasattr(current_user, 'children'):  # 如果是家长用户访问
+        return redirect(url_for('main.dashboard'))
+    
+    # 获取当前孩子的任务记录和积分
+    task_records = current_user.task_records.filter_by(is_confirmed=True).all()
+    points = current_user.points
+    
+    # 获取可用奖励（孩子只能查看活跃的奖励）
+    active_rewards = Reward.query.filter_by(is_active=True).all()
+    
+    # 获取孩子的勋章
+    badges = current_user.badges.all()
+    
+    return render_template('child_dashboard.html', 
+                           points=points, 
+                           task_records=task_records,
+                           active_rewards=active_rewards,
+                           badges=badges)
 
 # 孩子管理路由
 @main.route('/children')
 @login_required
 def list_children():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
     children = current_user.children.all()
     return render_template('children.html', children=children)
 
 @main.route('/child/add', methods=['GET', 'POST'])
 @login_required
 def add_child():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
     if request.method == 'POST':
         name = request.form['name']
         age = request.form.get('age', type=int)
-        child = Child(name=name, age=age, user_id=current_user.id)
+        username = request.form['username']
+        password = generate_password_hash(request.form['password'])
+        # 检查用户名是否已存在
+        if User.query.filter_by(username=username).first() or Child.query.filter_by(username=username).first():
+            flash('用户名已存在')
+            return redirect(url_for('main.add_child'))
+        
+        child = Child(name=name, age=age, user_id=current_user.id, username=username, password=password)
         db.session.add(child)
         db.session.commit()
         flash('孩子添加成功')
@@ -76,6 +173,11 @@ def add_child():
 @main.route('/child/edit/<int:child_id>', methods=['GET', 'POST'])
 @login_required
 def edit_child(child_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
     child = Child.query.get_or_404(child_id)
     # 确保是当前用户的孩子
     if child.parent != current_user:
@@ -86,6 +188,19 @@ def edit_child(child_id):
         child.name = request.form['name']
         age = request.form.get('age')
         child.age = int(age) if age else None
+        
+        # 可以选择是否更新密码
+        if 'password' in request.form and request.form['password']:
+            child.password = generate_password_hash(request.form['password'])
+            
+        # 如果更新用户名，需要检查唯一性
+        if 'username' in request.form and request.form['username'] != child.username:
+            new_username = request.form['username']
+            if User.query.filter_by(username=new_username).first() or Child.query.filter_by(username=new_username).first():
+                flash('用户名已存在')
+                return redirect(url_for('main.edit_child', child_id=child.id))
+            child.username = new_username
+            
         db.session.commit()
         flash('孩子信息更新成功')
         return redirect(url_for('main.child_detail', child_id=child.id))
@@ -94,53 +209,179 @@ def edit_child(child_id):
 
 # 删除功能已移至POST方法实现，见文件底部
 
+# 荣誉墙路由
+@main.route('/honor_wall')
+@login_required
+def honor_wall():
+    # 检查是否是家长用户
+    if hasattr(current_user, 'children'):  # 家长用户
+        # 获取当前用户的所有孩子
+        children = current_user.children.all()
+        children_with_badges = []
+        
+        for child in children:
+            # 获取孩子获得的所有勋章
+            badges = ChildBadge.query.filter_by(child_id=child.id).all()
+            
+            # 获取孩子的所有任务连续记录
+            streaks = TaskStreak.query.filter_by(child_id=child.id).all()
+            
+            # 计算每个任务距离下一个勋章还需要的天数
+            next_badges = {}
+            for streak in streaks:
+                # 查找该任务的勋章中，天数要求大于当前连续天数且最小的那个
+                next_badge = Badge.query.filter(
+                    Badge.task_id == streak.task_id,
+                    Badge.days_required > streak.current_streak
+                ).order_by(Badge.days_required.asc()).first()
+                
+                if next_badge:
+                    next_badges[streak.task_id] = next_badge
+            
+            children_with_badges.append({
+                'child': child,
+                'badges': badges,
+                'streaks': streaks,
+                'next_badges': next_badges
+            })
+        
+        return render_template('honor_wall.html', children_with_badges=children_with_badges, is_parent=True)
+    else:  # 孩子用户
+        # 只能查看自己的勋章
+        badges = current_user.badges.all()
+        
+        # 获取自己的所有任务连续记录
+        streaks = TaskStreak.query.filter_by(child_id=current_user.id).all()
+        
+        # 计算每个任务距离下一个勋章还需要的天数
+        next_badges = {}
+        for streak in streaks:
+            # 查找该任务的勋章中，天数要求大于当前连续天数且最小的那个
+            next_badge = Badge.query.filter(
+                Badge.task_id == streak.task_id,
+                Badge.days_required > streak.current_streak
+            ).order_by(Badge.days_required.asc()).first()
+            
+            if next_badge:
+                next_badges[streak.task_id] = next_badge
+        
+        # 创建兼容的结构
+        children_with_badges = [{
+            'child': current_user,
+            'badges': badges,
+            'streaks': streaks,
+            'next_badges': next_badges
+        }]
+        
+        return render_template('honor_wall.html', children_with_badges=children_with_badges, is_parent=False)
+
 # 任务管理路由
 @main.route('/tasks')
 @login_required
 def list_tasks():
-    tasks = Task.query.all()
-    return render_template('tasks.html', tasks=tasks)
+    # 获取排序参数，默认为按名称升序排序
+    sort_by = request.args.get('sort_by', 'name')
+    sort_dir = request.args.get('sort_dir', 'asc')
+    
+    # 构建排序表达式
+    if sort_by == 'points':
+        if sort_dir == 'asc':
+            tasks = Task.query.order_by(Task.points.asc()).all()
+        else:
+            tasks = Task.query.order_by(Task.points.desc()).all()
+    elif sort_by == 'category':
+        if sort_dir == 'asc':
+            tasks = Task.query.order_by(Task.category.asc()).all()
+        else:
+            tasks = Task.query.order_by(Task.category.desc()).all()
+    else:  # 默认按名称排序
+        if sort_dir == 'asc':
+            tasks = Task.query.order_by(Task.name.asc()).all()
+        else:
+            tasks = Task.query.order_by(Task.name.desc()).all()
+    
+    # 检查是否是家长用户
+    is_parent = hasattr(current_user, 'children')
+    
+    # 将当前排序信息和用户类型传递给模板
+    return render_template('tasks.html', tasks=tasks, current_sort=sort_by, current_dir=sort_dir, is_parent=is_parent)
 
 @main.route('/task/add', methods=['GET', 'POST'])
 @login_required
 def add_task():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    # 获取所有任务分类
+    categories = TaskCategory.query.all()
+    
     if request.method == 'POST':
         name = request.form['name']
         description = request.form.get('description', '')
         points = int(request.form['points'])
-        category = request.form['category']
-        task = Task(name=name, description=description, points=points, category=category, is_active=True)
+        category_id = int(request.form['category_id'])
+        task = Task(name=name, description=description, points=points, category_id=category_id, is_active=True)
         db.session.add(task)
+        db.session.commit()
+        # 为新任务创建默认的30天勋章
+        badge = Badge(
+            name=f'{name}连续达人',
+            description=f'连续完成{name}30天',
+            icon='🏆',
+            task_id=task.id,
+            days_required=30
+        )
+        db.session.add(badge)
         db.session.commit()
         flash('任务添加成功')
         return redirect(url_for('main.list_tasks'))
-    return render_template('add_task.html')
+    return render_template('add_task.html', categories=categories)
 
 @main.route('/task/edit/<int:task_id>', methods=['GET', 'POST'])
 @login_required
 def edit_task(task_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
     task = Task.query.get_or_404(task_id)
+    # 获取所有任务分类
+    categories = TaskCategory.query.all()
+    
     if request.method == 'POST':
         task.name = request.form['name']
         task.description = request.form.get('description', '')
         task.points = int(request.form['points'])
-        task.category = request.form['category']
+        task.category_id = int(request.form['category_id'])
         task.is_active = 'is_active' in request.form
         db.session.commit()
         flash('任务更新成功')
         return redirect(url_for('main.list_tasks'))
-    return render_template('edit_task.html', task=task)
+    return render_template('edit_task.html', task=task, categories=categories)
+
+
+
+
 
 # 奖励管理路由
 @main.route('/rewards')
 @login_required
 def list_rewards():
     rewards = Reward.query.all()
-    return render_template('rewards.html', rewards=rewards)
+    # 检查是否是家长用户
+    is_parent = hasattr(current_user, 'children')
+    return render_template('rewards.html', rewards=rewards, is_parent=is_parent)
 
 @main.route('/reward/add', methods=['GET', 'POST'])
 @login_required
 def add_reward():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
     if request.method == 'POST':
         name = request.form['name']
         description = request.form.get('description', '')
@@ -156,6 +397,10 @@ def add_reward():
 @main.route('/reward/edit/<int:reward_id>', methods=['GET', 'POST'])
 @login_required
 def edit_reward(reward_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
     reward = Reward.query.get_or_404(reward_id)
     if request.method == 'POST':
         reward.name = request.form['name']
@@ -187,44 +432,197 @@ def child_detail(child_id):
 @main.route('/task_record/confirm/<int:record_id>')
 @login_required
 def confirm_task_record(record_id):
+    from datetime import datetime, date, timedelta
+    
     record = TaskRecord.query.get_or_404(record_id)
     if record.child.parent != current_user:
         flash('无权操作')
         return redirect(url_for('main.dashboard'))
+    
     if not record.is_confirmed:
         record.is_confirmed = True
         # 增加孩子积分
         record.child.points += record.task.points
+        
+        # 计算连续完成天数
+        task_date = record.completed_at.date()
+        
+        # 获取或创建TaskStreak记录
+        streak = TaskStreak.query.filter_by(child_id=record.child_id, task_id=record.task_id).first()
+        
+        if not streak:
+            # 创建新的连续记录
+            streak = TaskStreak(
+                child_id=record.child_id,
+                task_id=record.task_id,
+                current_streak=1,
+                last_completed_date=task_date,
+                longest_streak=1
+            )
+            db.session.add(streak)
+        else:
+            # 计算与上一次完成的日期差
+            if streak.last_completed_date:
+                days_diff = (task_date - streak.last_completed_date).days
+                
+                if days_diff == 1 or (days_diff == 0 and task_date == date.today()):
+                    # 连续完成，增加连续天数
+                    streak.current_streak += 1
+                elif days_diff > 1:
+                    # 中断了，重置连续天数
+                    streak.current_streak = 1
+                # 如果是同一天，不改变连续天数（避免重复计数）
+            else:
+                streak.current_streak = 1
+            
+            streak.last_completed_date = task_date
+            # 更新最长连续天数
+            if streak.current_streak > streak.longest_streak:
+                streak.longest_streak = streak.current_streak
+            
+            # 检查并颁发勋章
+            # 获取该任务的所有勋章（按天数要求从低到高排序）
+            badges = Badge.query.filter_by(task_id=record.task_id).order_by(Badge.days_required).all()
+            
+            for badge in badges:
+                # 检查是否已经获得该勋章
+                existing_badge = ChildBadge.query.filter_by(child_id=record.child_id, badge_id=badge.id).first()
+                
+                # 如果未获得该勋章，且连续天数达到要求
+                if not existing_badge and streak.current_streak >= badge.days_required:
+                    # 创建勋章记录
+                    child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                    db.session.add(child_badge)
+                    
+                    # 给予积分奖励
+                    record.child.points += badge.points_reward
+                    flash(f"🎉 {record.child.name} 获得了 {badge.name}！额外奖励 {badge.points_reward} 积分！")
+                    break  # 一旦颁发了一个勋章，就退出循环，避免同一天多次颁发
+        
+        # 检查是否达到获得勋章的条件
+        badges = Badge.query.filter_by(task_id=record.task_id).all()
+        for badge in badges:
+            # 检查是否已经获得过这个勋章
+            existing_badge = ChildBadge.query.filter_by(
+                child_id=record.child_id,
+                badge_id=badge.id
+            ).first()
+            
+            if not existing_badge and streak.current_streak >= badge.days_required:
+                # 颁发勋章
+                child_badge = ChildBadge(
+                    child_id=record.child_id,
+                    badge_id=badge.id
+                )
+                db.session.add(child_badge)
+                flash(f'🎉 恭喜！{record.child.name}获得了「{badge.name}」勋章！')
+        
         db.session.commit()
         flash('任务已确认，积分已发放')
+    
     return redirect(url_for('main.child_detail', child_id=record.child.id))
 
-# 奖励兑换
-@main.route('/reward/redeem/<int:child_id>/<int:reward_id>')
+# 编辑任务记录
+@main.route('/task_record/edit/<int:record_id>', methods=['GET', 'POST'])
 @login_required
-def redeem_reward(child_id, reward_id):
-    child = Child.query.get_or_404(child_id)
-    reward = Reward.query.get_or_404(reward_id)
-    if child.parent != current_user:
+def edit_task_record(record_id):
+    record = TaskRecord.query.get_or_404(record_id)
+    # 确保是当前用户的孩子的记录
+    if record.child.parent != current_user:
         flash('无权操作')
         return redirect(url_for('main.dashboard'))
-    if child.points >= reward.cost:
-        # 创建兑换记录
-        from datetime import datetime
-        record = RewardRecord(child_id=child_id, reward_id=reward_id, redeemed_at=datetime.now())
-        # 扣除积分
-        child.points -= reward.cost
-        db.session.add(record)
+    
+    # 获取所有激活的任务供选择
+    tasks = Task.query.filter_by(is_active=True).all()
+    
+    if request.method == 'POST':
+        try:
+            # 获取表单数据
+            task_id = int(request.form['task_id'])
+            date_str = request.form['date']
+            
+            # 转换日期字符串为datetime对象
+            from datetime import datetime
+            completed_at = datetime.strptime(date_str, '%Y-%m-%d')
+            
+            # 获取新任务信息
+            new_task = Task.query.get_or_404(task_id)
+            
+            # 如果记录已确认，需要调整积分
+            if record.is_confirmed:
+                # 先减去原任务的积分
+                record.child.points -= record.task.points
+                # 再加上新任务的积分
+                record.child.points += new_task.points
+            
+            # 更新记录信息
+            record.task_id = task_id
+            record.completed_at = completed_at
+            
+            db.session.commit()
+            flash('任务记录更新成功')
+            return redirect(url_for('main.child_detail', child_id=record.child.id))
+            
+        except ValueError:
+            flash('日期格式错误，请使用YYYY-MM-DD格式')
+        except Exception as e:
+            flash(f'更新任务记录时发生错误：{str(e)}')
+            db.session.rollback()
+    
+    # 准备默认日期
+    from datetime import datetime
+    default_date = record.completed_at.strftime('%Y-%m-%d')
+    
+    return render_template('edit_task_record.html', record=record, tasks=tasks, default_date=default_date)
+
+# 删除任务记录
+@main.route('/task_record/delete/<int:record_id>', methods=['POST'])
+@login_required
+def delete_task_record(record_id):
+    try:
+        record = TaskRecord.query.get_or_404(record_id)
+        # 确保是当前用户的孩子的记录
+        if record.child.parent != current_user:
+            flash('无权操作')
+            return redirect(url_for('main.dashboard'))
+        
+        # 如果记录已确认，需要扣除积分
+        if record.is_confirmed:
+            record.child.points -= record.task.points
+        
+        # 保存孩子ID用于重定向
+        child_id = record.child.id
+        
+        # 删除记录
+        db.session.delete(record)
         db.session.commit()
-        flash('奖励兑换成功')
+        flash('任务记录已删除')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除任务记录失败: {str(e)}')
+        # 如果出错，尝试获取孩子ID
+        try:
+            child_id = record.child.id
+        except:
+            child_id = None
+    
+    # 重定向回孩子详情页
+    if child_id:
+        return redirect(url_for('main.child_detail', child_id=child_id))
     else:
-        flash('积分不足')
-    return redirect(url_for('main.child_detail', child_id=child_id))
+        return redirect(url_for('main.dashboard'))
+
+
 
 # 给孩子添加积分
 @main.route('/add_points', methods=['GET', 'POST'])
 @login_required
 def add_points():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
     # 获取当前用户的所有孩子
     children = current_user.children.all()
     # 获取所有激活的任务
@@ -355,6 +753,93 @@ def child_progress(child_id):
                           monthly_summary=monthly_summary, reward_goals=reward_goals)
 
 # 删除孩子
+# 任务分类管理路由
+@main.route('/task_categories')
+@login_required
+def manage_task_categories():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    categories = TaskCategory.query.all()
+    return render_template('manage_task_categories.html', categories=categories)
+
+@main.route('/task_category/add', methods=['GET', 'POST'])
+@login_required
+def add_task_category():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form.get('description', '')
+        
+        # 检查分类名称是否已存在
+        existing = TaskCategory.query.filter_by(name=name).first()
+        if existing:
+            flash('该分类名称已存在')
+            return redirect(url_for('main.add_task_category'))
+        
+        category = TaskCategory(name=name, description=description)
+        db.session.add(category)
+        db.session.commit()
+        flash('分类添加成功')
+        return redirect(url_for('main.manage_task_categories'))
+    
+    return render_template('add_task_category.html')
+
+@main.route('/task_category/edit/<int:category_id>', methods=['GET', 'POST'])
+@login_required
+def edit_task_category(category_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    category = TaskCategory.query.get_or_404(category_id)
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form.get('description', '')
+        
+        # 检查分类名称是否已存在（排除当前分类）
+        existing = TaskCategory.query.filter(TaskCategory.name == name, TaskCategory.id != category_id).first()
+        if existing:
+            flash('该分类名称已存在')
+            return redirect(url_for('main.edit_task_category', category_id=category_id))
+        
+        category.name = name
+        category.description = description
+        db.session.commit()
+        flash('分类更新成功')
+        return redirect(url_for('main.manage_task_categories'))
+    
+    return render_template('edit_task_category.html', category=category)
+
+@main.route('/task_category/delete/<int:category_id>', methods=['POST'])
+@login_required
+def delete_task_category(category_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    category = TaskCategory.query.get_or_404(category_id)
+    
+    # 检查是否有任务使用该分类
+    task_count = Task.query.filter_by(category_id=category_id).count()
+    if task_count > 0:
+        flash(f'无法删除该分类，因为有{task_count}个任务正在使用它')
+        return redirect(url_for('main.manage_task_categories'))
+    
+    db.session.delete(category)
+    db.session.commit()
+    flash('分类删除成功')
+    return redirect(url_for('main.manage_task_categories'))
+
 @main.route('/child/delete/<int:child_id>', methods=['POST'])
 @login_required
 def delete_child(child_id):
@@ -384,29 +869,110 @@ def delete_child(child_id):
 @main.route('/mall')
 @login_required
 def mall():
-    # 获取当前用户的所有孩子
-    children = current_user.children.all()
     # 获取所有激活的奖励（用于积分商城展示）
     available_rewards = Reward.query.filter_by(is_active=True).all()
     
-    # 为每个奖励计算每个孩子的可兑换数量
-    rewards_with_availability = []
-    for reward in available_rewards:
-        child_availability = []
-        for child in children:
-            # 计算孩子可以兑换该奖励的数量
-            can_redeem_count = child.points // reward.cost if reward.cost > 0 else 0
-            child_availability.append({
-                'child': child,
-                'can_redeem_count': can_redeem_count,
-                'has_enough_points': can_redeem_count > 0
+    # 检查是否是家长用户
+    if hasattr(current_user, 'children'):  # 家长用户
+        # 获取当前用户的所有孩子
+        children = current_user.children.all()
+        
+        # 为每个奖励计算每个孩子的可兑换数量
+        rewards_with_availability = []
+        for reward in available_rewards:
+            child_availability = []
+            for child in children:
+                # 计算孩子可以兑换该奖励的数量
+                can_redeem_count = child.points // reward.cost if reward.cost > 0 else 0
+                child_availability.append({
+                    'child': child,
+                    'can_redeem_count': can_redeem_count,
+                    'has_enough_points': can_redeem_count > 0
+                })
+            
+            rewards_with_availability.append({
+                'reward': reward,
+                'children_availability': child_availability
             })
         
-        rewards_with_availability.append({
-            'reward': reward,
-            'children_availability': child_availability
-        })
+        return render_template('mall.html', 
+                              children=children, 
+                              rewards_with_availability=rewards_with_availability,
+                              is_parent=True)
+    else:  # 孩子用户
+        # 只能查看自己的兑换情况
+        rewards_with_availability = []
+        for reward in available_rewards:
+            # 计算自己可以兑换该奖励的数量
+            can_redeem_count = current_user.points // reward.cost if reward.cost > 0 else 0
+            # 直接检查积分是否足够，而不仅仅依赖于can_redeem_count
+            has_enough_points = current_user.points >= reward.cost if reward.cost > 0 else True
+            rewards_with_availability.append({
+                'reward': reward,
+                'can_redeem_count': can_redeem_count,
+                'has_enough_points': has_enough_points
+            })
+        
+        return render_template('mall.html', 
+                              rewards_with_availability=rewards_with_availability,
+                              is_parent=False)
+
+# 修改奖励兑换函数，让孩子用户可以为自己兑换
+@main.route('/reward/redeem/<int:child_id>/<int:reward_id>')
+@login_required
+def redeem_reward(child_id, reward_id):
+    try:
+        child = Child.query.get_or_404(child_id)
+        reward = Reward.query.get_or_404(reward_id)
+        
+        # 权限检查：1. 家长可以为自己的孩子兑换；2. 孩子只能为自己兑换
+        if not (hasattr(current_user, 'children') and child.parent == current_user) and current_user.id != child_id:
+            flash('无权操作')
+            return redirect(url_for('main.dashboard' if hasattr(current_user, 'children') else 'main.child_dashboard'))
+        
+        if child.points >= reward.cost:
+            # 创建兑换记录
+            from datetime import datetime
+            record = RewardRecord(child_id=child_id, reward_id=reward_id, redeemed_at=datetime.now())
+            # 扣除积分
+            child.points -= reward.cost
+            db.session.add(record)
+            db.session.commit()
+            flash('奖励兑换成功')
+        else:
+            flash('积分不足')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'兑换过程中发生错误: {str(e)}')
+        import logging
+        logging.error(f'奖励兑换失败: {str(e)}')
     
-    return render_template('mall.html', 
-                          children=children, 
-                          rewards_with_availability=rewards_with_availability)
+    # 根据用户类型重定向
+    if hasattr(current_user, 'children'):  # 家长用户
+        return redirect(url_for('main.child_detail', child_id=child_id))
+    else:  # 孩子用户
+        return redirect(url_for('main.child_dashboard'))
+
+# 兑现奖励功能
+@main.route('/reward/fulfill/<int:record_id>', methods=['POST'])
+@login_required
+def fulfill_reward(record_id):
+    try:
+        # 获取奖励记录
+        record = RewardRecord.query.get_or_404(record_id)
+        child = Child.query.get_or_404(record.child_id)
+        
+        # 权限检查：只有家长可以兑现奖励
+        if not (hasattr(current_user, 'children') and child.parent == current_user):
+            flash('无权操作')
+            return redirect(url_for('main.dashboard'))
+        
+        # 更新状态为已兑现
+        record.is_fulfilled = True
+        db.session.commit()
+        flash('奖励已成功兑现')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'兑现过程中发生错误: {str(e)}')
+    
+    return redirect(url_for('main.child_detail', child_id=child.id))

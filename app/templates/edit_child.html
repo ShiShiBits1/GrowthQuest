@@ -23,6 +23,16 @@
         <input type="number" id="age" name="age" min="0" {% if child.age %}value="{{ child.age }}"{% endif %}>
     </div>
     <div class="form-group">
+        <label for="username">登录用户名</label>
+        <input type="text" id="username" name="username" value="{{ child.username }}" required>
+        <p class="help-text">修改用户名会影响孩子登录</p>
+    </div>
+    <div class="form-group">
+        <label for="password">登录密码</label>
+        <input type="password" id="password" name="password" placeholder="不修改请留空">
+        <p class="help-text">留空表示不修改当前密码</p>
+    </div>
+    <div class="form-group">
         <label>当前积分</label>
         <input type="number" value="{{ child.points }}" readonly>
         <p class="help-text">积分只能通过完成任务或兑换奖励来改变</p>

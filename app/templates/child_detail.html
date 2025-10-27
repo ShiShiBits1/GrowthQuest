@@ -11,7 +11,9 @@
 
 <div style="margin: 20px 0;">
     <a href="{{ url_for('main.edit_child', child_id=child.id) }}" class="button">修改</a>
-    <a href="{{ url_for('main.delete_child', child_id=child.id) }}" class="button danger-button" onclick="return confirm('确定要删除这个孩子吗？此操作不可恢复！');">删除</a>
+    <form action="{{ url_for('main.delete_child', child_id=child.id) }}" method="POST" style="display: inline;">
+        <button type="submit" class="button danger-button" onclick="return confirm('确定要删除这个孩子吗？此操作不可恢复！');">删除</button>
+    </form>
 </div>
 
 <h2>任务完成记录</h2>
@@ -34,6 +36,10 @@
             {% if not record.is_confirmed %}
             <a href="{{ url_for('main.confirm_task_record', record_id=record.id) }}" class="button">确认</a>
             {% endif %}
+            <a href="{{ url_for('main.edit_task_record', record_id=record.id) }}" class="button">修改</a>
+            <form action="{{ url_for('main.delete_task_record', record_id=record.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="button danger-button" onclick="return confirm('确定要删除这条任务记录吗？此操作不可恢复！');">删除</button>
+            </form>
         </td>
     </tr>
     {% endfor %}
@@ -51,6 +57,7 @@
         <th>消耗积分</th>
         <th>兑换时间</th>
         <th>状态</th>
+        <th>操作</th>
     </tr>
     {% for record in reward_records %}
     <tr>
@@ -59,6 +66,13 @@
         <td>{{ record.reward.cost }}</td>
         <td>{{ record.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>{{ '已兑现' if record.is_fulfilled else '待兑现' }}</td>
+        <td>
+            {% if not record.is_fulfilled %}
+            <form action="{{ url_for('main.fulfill_reward', record_id=record.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="button" onclick="return confirm('确定要兑现这个奖励吗？');">兑现</button>
+            </form>
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
 </table>

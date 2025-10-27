@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}编辑任务分类{% endblock %}
+
+{% block content %}
+<h1>编辑任务分类</h1>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="name">分类名称 *</label>
+        <input type="text" id="name" name="name" value="{{ category.name }}" required>
+        <small class="form-hint">请输入任务分类的名称，如"学习任务"、"生活习惯"等</small>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">分类描述</label>
+        <textarea id="description" name="description" rows="3">{{ category.description }}</textarea>
+        <small class="form-hint">可选择性地添加分类的描述信息，帮助理解该分类的用途</small>
+    </div>
+    
+    <div class="form-actions">
+        <button type="submit" class="button primary">保存修改</button>
+        <a href="{{ url_for('main.manage_task_categories') }}" class="button secondary">取消</a>
+    </div>
+</form>
+
+<style>
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"], textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 14px;
+    color: #666;
+}
+
+.form-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+.button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.button.primary {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.button.primary:hover {
+    background-color: #45a049;
+}
+
+.button.secondary {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.button.secondary:hover {
+    background-color: #e0e0e0;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}任务分类管理{% endblock %}
+
+{% block content %}
+<h1>任务分类管理</h1>
+
+<div class="action-buttons">
+    <a href="{{ url_for('main.add_task_category') }}" class="button primary">添加新分类</a>
+    <a href="{{ url_for('main.list_tasks') }}" class="button secondary">返回任务列表</a>
+</div>
+
+{% if categories %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>分类名称</th>
+            <th>描述</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>{{ category.name }}</td>
+            <td>{{ category.description or '无描述' }}</td>
+            <td>
+                <div class="action-links">
+                    <a href="{{ url_for('main.edit_task_category', category_id=category.id) }}" class="button small primary">编辑</a>
+                    <form action="{{ url_for('main.delete_task_category', category_id=category.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('确定要删除这个分类吗？如果有任务使用该分类，将无法删除。');">
+                        <button type="submit" class="button small danger">删除</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-state">暂无任务分类，请添加新分类。</p>
+{% endif %}
+
+<style>
+.action-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.data-table th, .data-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.action-links {
+    display: flex;
+    gap: 8px;
+}
+
+.button.small {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 0;
+    color: #666;
+}
+</style>
+{% endblock %}

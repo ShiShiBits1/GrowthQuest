@@ -22,7 +22,9 @@
         <td>{{ reward.cost }}</td>
         <td>{{ '激活' if reward.is_active else '停用' }}</td>
         <td>
+            {% if is_parent %}
             <a href="{{ url_for('main.edit_reward', reward_id=reward.id) }}" class="button">编辑</a>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}
@@ -30,5 +32,7 @@
 {% else %}
 <p>您还没有添加奖励</p>
 {% endif %}
+{% if is_parent %}
 <a href="{{ url_for('main.add_reward') }}" class="button">添加奖励</a>
+{% endif %}
 {% endblock %}

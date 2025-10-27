@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}编辑任务记录{% endblock %}
+
+{% block content %}
+<h1>编辑任务记录</h1>
+
+<div class="form-container">
+    <form method="POST">
+        <div class="form-group">
+            <label for="child_name">孩子：</label>
+            <input type="text" id="child_name" value="{{ record.child.name }}" disabled>
+        </div>
+        
+        <div class="form-group">
+            <label for="task_id">任务：</label>
+            <select id="task_id" name="task_id" required>
+                {% for task in tasks %}
+                <option value="{{ task.id }}" {% if task.id == record.task_id %}selected{% endif %}>
+                    {{ task.name }} ({{ task.points }}积分)
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">完成日期：</label>
+            <input type="date" id="date" name="date" value="{{ default_date }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="status">状态：</label>
+            <input type="text" id="status" value="{{ '已确认' if record.is_confirmed else '待确认' }}" disabled>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="button">保存修改</button>
+            <a href="{{ url_for('main.child_detail', child_id=record.child.id) }}" class="button">取消</a>
+        </div>
+    </form>
+</div>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+{% endblock %}

@@ -13,6 +13,16 @@
         <label for="age">年龄 (可选)</label>
         <input type="number" id="age" name="age" min="0">
     </div>
+    <div class="form-group">
+        <label for="username">登录用户名</label>
+        <input type="text" id="username" name="username" required>
+        <small>请设置一个独特的用户名</small>
+    </div>
+    <div class="form-group">
+        <label for="password">登录密码</label>
+        <input type="password" id="password" name="password" required>
+        <small>请设置密码，用于孩子登录系统</small>
+    </div>
     <button type="submit" class="button">添加</button>
 </form>
 {% endblock %}

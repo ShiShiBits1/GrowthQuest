@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}好习惯荣誉墙{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>🏆 好习惯荣誉墙</h1>
+    <p>展示孩子们坚持好习惯获得的荣誉勋章！</p>
+    
+    <div class="section">
+        <h2>🎯 连续坚持目标</h2>
+        <div class="goal-summary">
+            <div class="goal-item" style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>🏅 坚持达人挑战</h3>
+                <p>连续完成同一个任务可获得4个等级勋章：</p>
+                <ul style="margin-top: 10px;">
+                    <li>🥉 初级勋章：连续完成30天，奖励10积分</li>
+                    <li>🥈 中级勋章：连续完成90天，奖励20积分</li>
+                    <li>🥇 高级勋章：连续完成180天，奖励30积分</li>
+                    <li>🏆 毕业勋章：连续完成365天，奖励50积分</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    {% if children_with_badges %}
+    {% for child_info in children_with_badges %}
+    <div class="child-section">
+        <h2>{{ child_info.child.name }} 的荣誉展示</h2>
+        
+        <!-- 获得的勋章 -->
+        <div class="badges-section">
+            <h3>🏆 已获得的勋章</h3>
+            <div class="badges-container">
+                {% if child_info.badges %}
+                    {% for badge in child_info.badges %}
+                    <div class="badge-card" style="border-left: 4px solid 
+                        {% if badge.badge.level == '初级' %}#CD7F32{% elif badge.badge.level == '中级' %}#C0C0C0{% elif badge.badge.level == '高级' %}#FFD700{% else %}#FF9800{% endif %}">
+                        <div class="badge-icon">{{ badge.badge.icon }}</div>
+                        <div class="badge-info">
+                            <div class="badge-name">{{ badge.badge.name }}</div>
+                            <div class="badge-description">{{ badge.badge.description }}</div>
+                            <div class="badge-date">获得时间：{{ badge.earned_at.strftime('%Y-%m-%d') }}</div>
+                            <div class="badge-reward">积分奖励：+{{ badge.badge.points_reward }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="no-badges">尚未获得勋章，继续加油！💪</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 连续任务进度 -->
+        <div class="streaks-section">
+            <h3>🔥 连续完成进度</h3>
+            <div class="streaks-container">
+                {% if child_info.streaks %}
+                    {% for streak in child_info.streaks %}
+                    <div class="streak-card">
+                        <div class="streak-header">
+                            <span class="task-name">{{ streak.task.name }}</span>
+                            <span class="streak-days">🔥 {{ streak.current_streak }} 天</span>
+                        </div>
+                        <div class="streak-progress">
+                            <div class="progress-bar">
+                                {% set next_badge = child_info.next_badges.get(streak.task_id) %}
+                                {% if next_badge %}
+                                <div class="progress-fill" style="width: {{ min(streak.current_streak / next_badge.days_required * 100, 100) }}%"></div>
+                                {% else %}
+                                <div class="progress-fill" style="width: 100%; background-color: #4CAF50;"></div>
+                                {% endif %}
+                            </div>
+                            <div class="progress-text">
+                                {% set next_badge = child_info.next_badges.get(streak.task_id) %}
+                                {% if next_badge %}
+                                距离获得「{{ next_badge.name }}」勋章还需 {{ next_badge.days_required - streak.current_streak }} 天
+                                {% else %}
+                                已达到最高连续天数！🎉
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="streak-best">
+                            最高连续记录：{{ streak.longest_streak }} 天
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="no-streaks">还没有开始任何任务的连续挑战</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="no-data">您的孩子还没有获得任何勋章，鼓励他们坚持完成任务吧！</p>
+    {% endif %}
+</div>
+
+<style>
+.child-section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.child-section h2 {
+    color: #333;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* 勋章样式 */
+.badges-section {
+    margin-bottom: 30px;
+}
+
+.badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.badge-card {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 15px;
+    width: calc(50% - 10px);
+    min-width: 300px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.badge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.badge-icon {
+    font-size: 48px;
+    margin-right: 15px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.badge-info {
+    flex: 1;
+}
+
+.badge-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #d4af37;
+    margin-bottom: 5px;
+}
+
+.badge-description {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.badge-date {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.badge-reward {
+    font-size: 0.9em;
+    color: #FF6B6B;
+    font-weight: bold;
+    margin-top: 5px;
+    background-color: #FFF9C4;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.no-badges {
+    background-color: #fff3cd;
+    padding: 20px;
+    border-radius: 8px;
+    color: #856404;
+    text-align: center;
+    width: 100%;
+}
+
+/* 连续记录样式 */
+.streaks-section {
+    margin-top: 30px;
+}
+
+.streaks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.streak-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.streak-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.task-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 16px;
+}
+
+.streak-days {
+    font-weight: bold;
+    color: #ff6b6b;
+    font-size: 18px;
+}
+
+.streak-progress {
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #666;
+}
+
+.streak-best {
+    font-size: 12px;
+    color: #999;
+}
+
+.no-streaks {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 8px;
+    color: #6c757d;
+    text-align: center;
+}
+
+.no-data {
+    background-color: #e9ecef;
+    padding: 30px;
+    border-radius: 10px;
+    color: #6c757d;
+    text-align: center;
+    font-size: 16px;
+}
+
+.highlight {
+    font-weight: bold;
+    color: #ff6b6b;
+    font-size: 1.2em;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .badge-card {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .badge-icon {
+        font-size: 40px;
+    }
+    
+    .streak-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .streak-days {
+        font-size: 16px;
+    }
+}
+</style>
+{% endblock %}

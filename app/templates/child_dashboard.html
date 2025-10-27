@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}孩子仪表盘 - 成长奖励系统{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>✨ 我的成长空间</h2>
+    
+    <!-- 个人信息卡片 -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3>{{ current_user.name }}的个人信息</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <div class="points-circle">
+                        <span class="points-value">{{ points }}</span>
+                    </div>
+                    <p class="mt-2 text-muted">当前积分</p>
+                </div>
+                <div class="col-md-8">
+                    <h4>🎉 最新成就</h4>
+                    {% if badges %}
+                        <div class="badges-display">
+                            {% for badge in badges[:3] %}<!-- 只显示最新的3个勋章 -->
+                                <div class="badge-item">
+                                    <span class="badge-icon">{{ badge.badge.icon }}</span>
+                                    <span class="badge-name">{{ badge.badge.name }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">继续努力，获得你的第一个勋章吧！</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近完成的任务 -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h3>✅ 最近完成的任务</h3>
+        </div>
+        <div class="card-body">
+            {% if task_records %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>任务名称</th>
+                            <th>完成时间</th>
+                            <th>获得积分</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in task_records[:10] %}<!-- 只显示最近10条记录 -->
+                            <tr>
+                                <td>{{ record.task.name }}</td>
+                                <td>{{ record.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>+{{ record.task.points }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-center text-muted">还没有完成任何任务</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 可兑换的奖励 -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h3>🎁 可兑换的奖励</h3>
+        </div>
+        <div class="card-body">
+            {% if active_rewards %}
+                <div class="rewards-grid">
+                    {% for reward in active_rewards %}
+                        <a href="{{ url_for('main.mall') }}" class="reward-link">
+                            <div class="reward-card {% if points >= reward.cost %}reward-available{% else %}reward-unavailable{% endif %}">
+                                <div class="reward-header">
+                                    <h4>{{ reward.name }}</h4>
+                                    <span class="reward-cost">💰 {{ reward.cost }}</span>
+                                </div>
+                                <div class="reward-description">
+                                    <p>{{ reward.description }}</p>
+                                </div>
+                                <div class="reward-status">
+                                    {% if points >= reward.cost %}
+                                        <span class="status-available">点击前往积分商城兑换！</span>
+                                    {% else %}
+                                        <span class="status-unavailable">还需要 {{ reward.cost - points }} 积分</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">暂无可用奖励</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 我的勋章 -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3>🏆 我的勋章</h3>
+        </div>
+        <div class="card-body">
+            {% if badges %}
+                <div class="badges-grid">
+                    {% for badge in badges %}
+                        <div class="badge-card">
+                            <div class="badge-icon-large">{{ badge.badge.icon }}</div>
+                            <h4>{{ badge.badge.name }}</h4>
+                            <p>{{ badge.badge.description }}</p>
+                            <p class="badge-date">获得时间：{{ badge.earned_at.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">继续努力，获得你的第一个勋章吧！</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* 积分圆环样式 */
+.points-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b6b, #ffa502);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.points-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: white;
+}
+
+/* 勋章展示样式 */
+.badges-display {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.badge-item {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-icon {
+    font-size: 20px;
+}
+
+.badge-name {
+    font-weight: 500;
+}
+
+/* 奖励卡片样式 */
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.reward-card {
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.reward-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.reward-available {
+    border-color: #28a745;
+}
+
+.reward-unavailable {
+    opacity: 0.7;
+}
+
+/* 奖励链接样式 */
+.reward-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.reward-link:hover .reward-card {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.reward-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.reward-cost {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.reward-description {
+    margin-bottom: 15px;
+}
+
+.status-available {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-unavailable {
+    color: #dc3545;
+}
+
+/* 勋章卡片样式 */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.badge-card {
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    transition: transform 0.3s;
+}
+
+.badge-card:hover {
+    transform: scale(1.05);
+}
+
+.badge-icon-large {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.badge-date {
+    color: #6c757d;
+    font-size: 14px;
+    margin-top: 10px;
+}
+</style>
+{% endblock %}

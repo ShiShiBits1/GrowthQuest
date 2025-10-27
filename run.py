@@ -26,4 +26,8 @@ with app.app_context():
 
 if __name__ == '__main__':
     # 允许在所有网络接口上运行，方便NAS访问
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    host = '0.0.0.0'  # 使用标准的0.0.0.0监听所有网络接口
+    port = 8086
+    debug = False
+    print(f'启动应用服务器，监听地址: {host}:{port}')
+    app.run(host=host, port=port, debug=debug)

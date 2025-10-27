@@ -4,45 +4,84 @@
 
 {% block content %}
     <h1>🛒 积分商城</h1>
-    <p>欢迎来到积分商城！在这里您可以为孩子选择并兑换各种奖励。</p>
-    
-    {% if children|length == 0 %}
-        <div class="flash">您还没有添加孩子，请先添加孩子后再使用积分商城功能。</div>
-        <a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
-    {% elif rewards_with_availability|length == 0 %}
-        <div class="flash">商城中暂无可用奖励，请联系管理员添加奖励。</div>
+    {% if is_parent %}
+        <p>欢迎来到积分商城！在这里您可以为孩子选择并兑换各种奖励。</p>
     {% else %}
-        <div class="mall-container">
-            {% for item in rewards_with_availability %}
-            <div class="reward-card">
-                <h3>🎁 {{ item.reward.name }}</h3>
-                <p><strong>价格:</strong> {{ item.reward.cost }} 积分</p>
-                <p><strong>等级:</strong> {{ item.reward.level }}</p>
-                {% if item.reward.description %}
-                <p><strong>描述:</strong> {{ item.reward.description }}</p>
-                {% endif %}
-                
-                <div class="child-redemption-section">
-                    <h4>为孩子兑换</h4>
-                    {% for child_info in item.children_availability %}
-                    <div class="child-redemption-item">
-                        <span>{{ child_info.child.name }} (当前积分: {{ child_info.child.points }})</span>
-                        {% if child_info.has_enough_points %}
-                        <a href="{{ url_for('main.redeem_reward', child_id=child_info.child.id, reward_id=item.reward.id) }}" 
-                           class="button" 
-                           onclick="return confirm('确定要为{{ child_info.child.name }}兑换【{{ item.reward.name }}】吗？将扣除{{ item.reward.cost }}积分。')">
-                            立即兑换
-                        </a>
-                        <span class="redeem-info">可兑换 {{ child_info.can_redeem_count }} 个</span>
-                        {% else %}
-                        <span class="insufficient-points">积分不足</span>
-                        {% endif %}
+        <p>欢迎来到积分商城！您可以用自己的积分兑换喜欢的奖励。</p>
+    {% endif %}
+    
+    {% if is_parent %}
+        {% if children|length == 0 %}
+            <div class="flash">您还没有添加孩子，请先添加孩子后再使用积分商城功能。</div>
+            <a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
+        {% elif rewards_with_availability|length == 0 %}
+            <div class="flash">商城中暂无可用奖励，请联系管理员添加奖励。</div>
+        {% else %}
+            <div class="mall-container">
+                {% for item in rewards_with_availability %}
+                <div class="reward-card">
+                    <h3>🎁 {{ item.reward.name }}</h3>
+                    <p><strong>价格:</strong> {{ item.reward.cost }} 积分</p>
+                    <p><strong>等级:</strong> {{ item.reward.level }}</p>
+                    {% if item.reward.description %}
+                    <p><strong>描述:</strong> {{ item.reward.description }}</p>
+                    {% endif %}
+                    
+                    <div class="child-redemption-section">
+                        <h4>为孩子兑换</h4>
+                        {% for child_info in item.children_availability %}
+                        <div class="child-redemption-item">
+                            <span>{{ child_info.child.name }} (当前积分: {{ child_info.child.points }})</span>
+                            {% if child_info.has_enough_points %}
+                            <a href="{{ url_for('main.redeem_reward', child_id=child_info.child.id, reward_id=item.reward.id) }}" 
+                               class="button" 
+                               onclick="return confirm('确定要为{{ child_info.child.name }}兑换【{{ item.reward.name }}】吗？将扣除{{ item.reward.cost }}积分。')">
+                                立即兑换
+                            </a>
+                            <span class="redeem-info">可兑换 {{ child_info.can_redeem_count }} 个</span>
+                            {% else %}
+                            <span class="insufficient-points">积分不足</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
+        {% endif %}
+    {% else %}
+        {% if rewards_with_availability|length == 0 %}
+            <div class="flash">商城中暂无可用奖励，请联系管理员添加奖励。</div>
+        {% else %}
+            <div class="mall-container">
+                {% for item in rewards_with_availability %}
+                <div class="reward-card">
+                    <h3>🎁 {{ item.reward.name }}</h3>
+                    <p><strong>价格:</strong> {{ item.reward.cost }} 积分</p>
+                    <p><strong>等级:</strong> {{ item.reward.level }}</p>
+                    {% if item.reward.description %}
+                    <p><strong>描述:</strong> {{ item.reward.description }}</p>
+                    {% endif %}
+                    
+                    <div class="child-redemption-section">
+                        <div class="child-redemption-item">
+                            <span>我的积分: {{ current_user.points }}</span>
+                            {% if item.has_enough_points %}
+                            <a href="{{ url_for('main.redeem_reward', child_id=current_user.id, reward_id=item.reward.id) }}" 
+                               class="button" 
+                               onclick="return confirm('确定要兑换【{{ item.reward.name }}】吗？将扣除{{ item.reward.cost }}积分。')">
+                                立即兑换
+                            </a>
+                            <span class="redeem-info">可兑换 {{ item.can_redeem_count }} 个</span>
+                            {% else %}
+                            <span class="insufficient-points">积分不足</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     {% endif %}
     
     <style>

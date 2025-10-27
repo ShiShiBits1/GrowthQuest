@@ -7,10 +7,31 @@
 {% if tasks %}
 <table>
     <tr>
-        <th>任务名称</th>
+        <th>
+            <a href="{{ url_for('main.list_tasks', sort_by='name', sort_dir='asc' if current_sort != 'name' else ('desc' if current_dir == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                任务名称
+                {% if current_sort == 'name' %}
+                <span>({{ '↑' if current_dir == 'asc' else '↓' }})</span>
+                {% endif %}
+            </a>
+        </th>
         <th>描述</th>
-        <th>任务分类</th>
-        <th>奖励积分</th>
+        <th>
+            <a href="{{ url_for('main.list_tasks', sort_by='category', sort_dir='asc' if current_sort != 'category' else ('desc' if current_dir == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                任务分类
+                {% if current_sort == 'category' %}
+                <span>({{ '↑' if current_dir == 'asc' else '↓' }})</span>
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="{{ url_for('main.list_tasks', sort_by='points', sort_dir='asc' if current_sort != 'points' else ('desc' if current_dir == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                奖励积分
+                {% if current_sort == 'points' %}
+                <span>({{ '↑' if current_dir == 'asc' else '↓' }})</span>
+                {% endif %}
+            </a>
+        </th>
         <th>状态</th>
         <th>操作</th>
     </tr>
@@ -22,7 +43,9 @@
         <td>{{ task.points }}</td>
         <td>{{ '激活' if task.is_active else '停用' }}</td>
         <td>
+            {% if is_parent %}
             <a href="{{ url_for('main.edit_task', task_id=task.id) }}" class="button">编辑</a>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}
@@ -30,5 +53,7 @@
 {% else %}
 <p>您还没有添加任务</p>
 {% endif %}
+{% if is_parent %}
 <a href="{{ url_for('main.add_task') }}" class="button">添加任务</a>
+{% endif %}
 {% endblock %}
