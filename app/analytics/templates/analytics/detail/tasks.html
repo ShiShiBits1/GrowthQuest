@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}任务完成详情 - 成长数据分析{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📝 任务完成详情</h2>
+                <a href="{{ url_for('analytics.analytics_dashboard', child_id=child.id) }}" class="btn btn-outline-secondary">返回仪表盘</a>
+            </div>
+            
+            <!-- 时间范围选择 -->
+            <div class="card p-3 mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">选择时间范围：</label>
+                        <form action="{{ url_for('analytics.analytics_detail', child_id=child.id, metric=metric) }}" method="get" class="d-flex">
+                            <select name="time_range" class="form-control" onchange="this.form.submit()">
+                                <option value="7" {% if time_range == '7' %}selected{% endif %}>最近7天</option>
+                                <option value="30" {% if time_range == '30' %}selected{% endif %}>最近30天</option>
+                                <option value="90" {% if time_range == '90' %}selected{% endif %}>最近90天</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="col-md-8 text-right pt-4">
+                        <h5>正在查看：<span class="text-primary">{{ child.name }}</span> 的任务完成记录</h5>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 任务完成记录列表 -->
+            {% if task_records %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>任务完成记录</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>任务名称</th>
+                                    <th>获得积分</th>
+                                    <th>完成时间</th>
+                                    <th>分类</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in task_records %}
+                                <tr>
+                                    <td>{{ record.task.name }}</td>
+                                    <td><span class="badge badge-success">{{ record.task.points }}</span></td>
+                                    <td>{{ record.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ record.task.task_category.name }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card p-5 text-center">
+                <p class="text-muted">在所选时间范围内没有完成的任务记录</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 分类完成统计 -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>分类完成统计</h5>
+                </div>
+                <div class="card-body">
+                    {% if category_completion_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>任务分类</th>
+                                    <th>总任务数</th>
+                                    <th>已完成任务数</th>
+                                    <th>完成率</th>
+                                    <th>进度</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in category_completion_stats %}
+                                <tr>
+                                    <td>{{ stat.category_name }}</td>
+                                    <td>{{ stat.total_tasks }}</td>
+                                    <td>{{ stat.completed_tasks }}</td>
+                                    <td>{{ "%.1f"|format(stat.completion_rate) }}%</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ stat.completion_rate }}%" aria-valuenow="{{ stat.completion_rate }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ "%.1f"|format(stat.completion_rate) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">暂无分类统计数据</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

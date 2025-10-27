@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}连续完成统计 - 分析中心{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>{{ child.name }} 的连续完成统计</h2>
+            <p class="text-muted">时间范围：{{ time_range }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">连续完成记录</h5>
+                </div>
+                <div class="card-body">
+                    {% if streaks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>任务名称</th>
+                                    <th>当前连续天数</th>
+                                    <th>最长连续天数</th>
+                                    <th>最后完成日期</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for streak in streaks %}
+                                <tr>
+                                    <td>{{ streak.task.name if streak.task else '未知任务' }}</td>
+                                    <td>{{ streak.current_streak }}</td>
+                                    <td>{{ streak.longest_streak }}</td>
+                                    <td>{{ streak.last_completed_date.strftime('%Y-%m-%d') if streak.last_completed_date else '无' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">暂无连续完成记录</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">统计概览</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h3 font-weight-bold">{{ streaks|length }}</div>
+                                <div class="text-sm text-muted">追踪的任务数</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h3 font-weight-bold">{{ streaks|sum(attribute='current_streak') }}</div>
+                                <div class="text-sm text-muted">总连续天数</div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <div class="h3 font-weight-bold">{{ streaks|map(attribute='longest_streak')|max|default(0) }}</div>
+                        <div class="text-sm text-muted">最长连续记录</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">活跃连续任务</h5>
+                </div>
+                <div class="card-body">
+                    {% set active_streaks = streaks|selectattr('current_streak', '>', 0)|list %}
+                    {% if active_streaks %}
+                    <ul class="list-group">
+                        {% for streak in active_streaks %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ streak.task.name if streak.task else '未知任务' }}
+                            <span class="badge badge-success">{{ streak.current_streak }}天</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-center text-muted">暂无活跃的连续任务</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

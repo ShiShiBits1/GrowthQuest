@@ -1,0 +1,646 @@
+{% extends "base.html" %}
+{% block title %}成长数据分析 - 成长奖励系统{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary font-bold">📊 成长数据分析</h2>
+                <span class="text-sm text-gray-500">上次更新: {{ current_time|strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            
+            <!-- 选择孩子和时间范围 -->
+            <div class="card shadow-sm p-4 mb-6 rounded-lg border-0">
+                <div class="row">
+                    {% if children|length > 1 %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-medium">选择孩子：</label>
+                        <form action="{{ url_for('analytics.analytics_dashboard') }}" method="get" class="d-flex">
+                            <select name="child_id" class="form-control border rounded-lg shadow-sm transition-all duration-300 focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()">
+                                {% for child in children %}
+                                <option value="{{ child.id }}" {% if child.id == selected_child.id %}selected{% endif %}>
+                                    {{ child.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-{% if children|length > 1 %}6{% else %}12{% endif %}">
+                        <label class="form-label font-medium">选择时间范围：</label>
+                        <form action="{{ url_for('analytics.analytics_dashboard', child_id=selected_child.id) }}" method="get" class="d-flex">
+                            <select name="time_range" class="form-control border rounded-lg shadow-sm transition-all duration-300 focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()">
+                                <option value="7" {% if time_range == '7' %}selected{% endif %}>最近7天</option>
+                                <option value="30" {% if time_range == '30' %}selected{% endif %}>最近30天</option>
+                                <option value="90" {% if time_range == '90' %}selected{% endif %}>最近90天</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 概览卡片 -->
+            <div class="row mb-6">
+                <div class="col-md-3 mb-4">
+                    <div class="card text-center p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="mb-2"><i class="fas fa-user-circle text-3xl opacity-90"></i></div>
+                        <h3 class="text-lg font-semibold">{{ selected_child.name }}</h3>
+                        <p class="text-sm opacity-90 mb-1">当前积分</p>
+                        <h1 class="display-4 font-bold">{{ selected_child.points }}</h1>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card text-center p-5 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="mb-2"><i class="fas fa-tasks text-3xl opacity-90"></i></div>
+                        <h3 class="text-lg font-semibold">任务完成率</h3>
+                        <p class="text-sm opacity-90 mb-1">
+                            完成 {{ completion_rate_data.completed_tasks }} / {{ completion_rate_data.total_active_tasks }}
+                        </p>
+                        <h1 class="display-4 font-bold">{{ "%.1f"|format(completion_rate_data.completion_rate) }}%</h1>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card text-center p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="mb-2"><i class="fas fa-medal text-3xl opacity-90"></i></div>
+                        <h3 class="text-lg font-semibold">获得勋章</h3>
+                        <p class="text-sm opacity-90 mb-1">累计勋章数量</p>
+                        <h1 class="display-4 font-bold">{{ badge_stats.total_badges }}</h1>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card text-center p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div class="mb-2"><i class="fas fa-fire text-3xl opacity-90"></i></div>
+                        <h3 class="text-lg font-semibold">最长连续</h3>
+                        <p class="text-sm opacity-90 mb-1">任务连续完成天数</p>
+                        <h1 class="display-4 font-bold">{{ streak_stats.max_streak }}</h1>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 主要分析内容 -->
+            <div class="row mb-6">
+                <!-- 任务分类分布饼图 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                            <h5 class="font-medium text-gray-800">任务分类分布</h5>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='tasks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                        </div>
+                        <div class="card-body">
+                            {% if category_distribution %}
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted py-10">
+                                <i class="fas fa-chart-pie text-4xl text-gray-300 mb-3"></i>
+                                <p>暂无分类数据</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 积分获取趋势 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                            <h5 class="font-medium text-gray-800">积分获取趋势</h5>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='points') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                        </div>
+                        <div class="card-body">
+                            {% if points_trend_data %}
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="pointsTrendChart"></canvas>
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted py-10">
+                                <i class="fas fa-chart-line text-4xl text-gray-300 mb-3"></i>
+                                <p>暂无积分趋势数据</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部信息 -->
+            <div class="row">
+                <!-- 连续完成情况 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                            <h5 class="font-medium text-gray-800">任务连续完成情况</h5>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='streaks') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                        </div>
+                        <div class="card-body">
+                            {% if streak_stats.streaks %}
+                            <div class="chart-container" style="height: 250px; margin-bottom: 20px;">
+                                <canvas id="streakChart"></canvas>
+                            </div>
+                            <ul class="list-group rounded-lg overflow-hidden">
+                                {% for streak in streak_stats.streaks %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+                                    <div>
+                                        <strong class="text-gray-800">{{ streak.task.name }}</strong>
+                                        <p class="text-sm text-gray-600 mb-0">{{ streak.get_status_description() }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium 
+                                        {% if streak.is_active() %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                        {{ streak.current_streak }} 天
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="text-center text-muted py-10">
+                                <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
+                                <p>暂无连续任务记录</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    // 连续完成天数趋势图
+                    {% if streak_stats and streak_stats.streaks %}
+                    const streakCtx = document.getElementById('streakChart').getContext('2d');
+                    const streakData = {
+                        labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                        datasets: [
+                            {% for streak in streak_stats.streaks[:3] %}
+                            {
+                                label: '{{ streak.task.name }}',
+                                data: [{% for i in range(7) %}{{ (i + 1) % 10 }}{% if not loop.last %},{% endif %}{% endfor %}],
+                                borderColor: 'rgba({{ loop.index * 60 }}, {{ loop.index * 80 }}, {{ 255 - loop.index * 40 }}, 1)',
+                                backgroundColor: 'rgba({{ loop.index * 60 }}, {{ loop.index * 80 }}, {{ 255 - loop.index * 40 }}, 0.1)',
+                                tension: 0.1
+                            }{% if not loop.last %},{% endif %}
+                            {% endfor %}
+                        ]
+                    };
+                    
+                    const streakChart = new Chart(streakCtx, {
+                        type: 'line',
+                        data: streakData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: '连续天数'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    {% endif %}
+                </script>
+                
+                <!-- 习惯养成时间线图表 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header bg-white rounded-t-xl border-b">
+                            <h5 class="font-medium text-gray-800">习惯养成趋势</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if habit_timeline %}
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="habitTrendChart"></canvas>
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted py-10">
+                                <i class="fas fa-calendar-alt text-4xl text-gray-300 mb-3"></i>
+                                <p>暂无习惯养成数据</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 勋章统计 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-md rounded-xl border-0 transition-all duration-300 hover:shadow-lg">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white rounded-t-xl border-b">
+                            <h5 class="font-medium text-gray-800">勋章统计</h5>
+                            <a href="{{ url_for('analytics.analytics_detail', child_id=selected_child.id, metric='badges') }}" class="btn btn-sm btn-primary rounded-full px-4 py-1 text-sm hover:bg-primary/90 transition-colors">查看详情</a>
+                        </div>
+                        <div class="card-body">
+                            {% if badge_stats.total_badges > 0 %}
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h6 class="font-medium text-gray-700 mb-3">按等级分布</h6>
+                                    <ul class="list-group rounded-lg overflow-hidden">
+                                        {% for level_data in badge_stats.badges_by_level %}
+                                        <li class="list-group-item d-flex justify-content-between items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+                                            <span class="font-medium">等级 {{ level_data.level }}</span>
+                                            <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                                                {{ level_data.count }}
+                                            </span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="col-sm-6">
+                                    <h6 class="font-medium text-gray-700 mb-3">最近获得</h6>
+                                    <div class="badge-list">
+                                        {% for child_badge in badge_stats.recent_badges %}
+                                        <div class="badge-item mb-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                            <div class="flex items-center">
+                                                <span class="badge-icon text-2xl mr-3">{{ child_badge.badge.icon }}</span>
+                                                <div class="flex-1">
+                                                    <span class="badge-name font-medium text-gray-800">{{ child_badge.badge.name }}</span>
+                                                    <span class="badge-date text-xs text-gray-500 block">
+                                                        {{ child_badge.earned_at.strftime('%Y-%m-%d') }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted py-10">
+                                <i class="fas fa-award text-4xl text-gray-300 mb-3"></i>
+                                <p>暂未获得勋章</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 统一图表样式配置
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.color = '#495057';
+    Chart.defaults.plugins.legend.position = 'top';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 20;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.titleFont.size = 14;
+    Chart.defaults.plugins.tooltip.bodyFont.size = 13;
+    // 任务分类分布饼图
+    {% if category_distribution %}
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryColors = [
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 206, 86, 0.8)',
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(153, 102, 255, 0.8)',
+        'rgba(255, 159, 64, 0.8)'
+    ];
+    const categoryData = {
+        labels: [
+            {% for item in category_distribution %}
+                '{{ item.category_name }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for item in category_distribution %}
+                    {{ item.count }},
+                {% endfor %}
+            ],
+            backgroundColor: categoryColors,
+            borderColor: 'white',
+            borderWidth: 2,
+            hoverOffset: 10
+        }]
+    };
+    
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: categoryData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 13
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.raw} 个任务 (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+    {% endif %}
+    
+    // 积分获取趋势线图
+    {% if points_trend_data %}
+    const pointsTrendCtx = document.getElementById('pointsTrendChart').getContext('2d');
+    const pointsTrendChart = new Chart(pointsTrendCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for data in points_trend_data %}'{{ data.date }}',{% endfor %}],
+            datasets: [{
+                label: '每日积分',
+                data: [{% for data in points_trend_data %}{{ data.daily_points or 0 }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointHoverBackgroundColor: 'white',
+                pointHoverBorderColor: 'rgba(75, 192, 192, 1)',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        stepSize: 5
+                    },
+                    title: {
+                        display: true,
+                        text: '积分',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: '日期',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `每日积分: ${context.parsed.y} 分`;
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+    {% endif %}
+    
+    // 习惯养成趋势图
+    {% if habit_timeline %}
+    const habitCtx = document.getElementById('habitTrendChart').getContext('2d');
+    
+    // 处理最近7天的数据用于图表展示
+    const recentHabitData = [
+        {% for item in habit_timeline[-7:] %}
+            {
+                date: '{{ item.date.strftime('%m-%d') }}',
+                completed: {{ item.completed_count }}
+            },
+        {% endfor %}
+    ];
+    
+    const habitData = {
+        labels: recentHabitData.map(item => item.date),
+        datasets: [{
+            label: '每日完成任务数',
+            data: recentHabitData.map(item => item.completed),
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: 'white',
+            pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+            pointHoverBorderWidth: 2
+        }]
+    };
+    
+    const habitChart = new Chart(habitCtx, {
+        type: 'line',
+        data: habitData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    title: {
+                        display: true,
+                        text: '完成任务数',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: '日期',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `完成任务: ${context.parsed.y} 个`;
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+    {% endif %}
+</script>
+
+<style>
+    /* 基础样式 */
+    body {
+        background-color: #f8f9fa;
+    }
+    
+    /* 卡片样式优化 */
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* 响应式优化 */
+    @media (max-width: 768px) {
+        .display-4 {
+            font-size: 2rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem 1rem;
+        }
+        
+        .mb-6 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .chart-container {
+            height: 250px !important;
+        }
+    }
+    
+    /* 动画效果 */
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+    
+    .duration-300 {
+        transition-duration: 0.3s;
+    }
+    
+    .ease-out-quart {
+        transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    
+    /* 阴影效果 */
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .shadow-md {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
+    
+    .shadow-lg {
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    }
+    
+    /* 徽章列表样式 */
+    .badge-list .badge-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .badge-list .badge-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .badge-icon {
+        font-size: 1.5rem;
+    }
+    
+    .badge-name {
+        font-weight: 500;
+        flex: 1;
+    }
+    
+    .badge-date {
+        white-space: nowrap;
+    }
+    
+    /* 按钮样式优化 */
+    .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    
+    /* 表单控件样式 */
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+{% endblock %}

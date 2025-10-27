@@ -102,7 +102,8 @@ def create_app(config_name=None):
         logger.error(traceback.format_exc())
           
         # 确定错误码，确保是整数类型
-        status_code = int(getattr(error, 'code', 500))
+        error_code = getattr(error, 'code', None)
+        status_code = int(error_code) if error_code is not None else 500
         
         # 对于开发环境，返回详细错误信息
         if app.debug:
@@ -129,6 +130,11 @@ def create_app(config_name=None):
     def before_request():
         logger.debug(f'请求: {request.method} {request.path}')
     
+    # 添加strftime过滤器
+    @app.template_filter('strftime')
+    def strftime_filter(date, format_str='%Y-%m-%d %H:%M:%S'):
+        return date.strftime(format_str)
+    
     # 延迟导入蓝图以避免循环导入
     logger.debug('准备注册蓝图')
     try:
@@ -137,6 +143,10 @@ def create_app(config_name=None):
             from app.main import main as main_blueprint
             logger.debug('注册main蓝图')
             app.register_blueprint(main_blueprint)
+            
+            from app.analytics import analytics as analytics_blueprint
+            logger.debug('注册analytics蓝图')
+            app.register_blueprint(analytics_blueprint)
         logger.debug('蓝图注册成功')
     except Exception as e:
         logger.error(f'注册蓝图时发生错误: {str(e)}')

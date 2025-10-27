@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ child.name }} - 习惯养成分析{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>{{ child.name }} - 习惯养成分析</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('analytics.analytics_dashboard') }}">数据分析</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">习惯养成</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 时间范围选择 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <form method="get" class="form-inline">
+                <label for="time_range" class="mr-2">时间范围：</label>
+                <select name="time_range" id="time_range" class="form-control mr-2">
+                    <option value="7" {% if time_range == '7' %}selected{% endif %}>近7天</option>
+                    <option value="30" {% if time_range == '30' %}selected{% endif %}>近30天</option>
+                    <option value="90" {% if time_range == '90' %}selected{% endif %}>近3个月</option>
+                </select>
+                <button type="submit" class="btn btn-primary">应用</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 习惯养成概览卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-2">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">总连续记录</h5>
+                    <p class="card-text" style="font-size: 2rem;">{{ detailed_streak_stats.total_streaks }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-2">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">活跃连续记录</h5>
+                    <p class="card-text" style="font-size: 2rem;">{{ detailed_streak_stats.active_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-2">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">已中断记录</h5>
+                    <p class="card-text" style="font-size: 2rem;">{{ detailed_streak_stats.broken_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 习惯养成时间线日历视图 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>习惯养成时间线</h5>
+                </div>
+                <div class="card-body">
+                    {% if habit_timeline %}
+                    <div class="timeline-calendar">
+                        <div class="calendar-grid">
+                            {% for item in habit_timeline %}
+                            <div class="calendar-day {% if item.has_completions %}has-completions{% endif %} {% if item.date == today %}
+today{% endif %}" 
+                                 data-toggle="tooltip" 
+                                 title="{{ item.date.strftime('%Y-%m-%d') }}: {{ item.completed_count }}个任务 ({{ item.unique_tasks }}个不同任务)">
+                                <div class="day-number">{{ item.date.day }}</div>
+                                <div class="day-mark" style="background-color: {% if item.has_completions %}{% if item.completed_count >= 3 %}#17a2b8{% elif item.completed_count >= 2 %}#28a745{% else %}#ffc107{% endif %}{% else %}#e9ecef{% endif %}"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">暂无习惯养成数据</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活跃连续记录 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🔥 活跃连续记录</h5>
+                </div>
+                <div class="card-body">
+                    {% if detailed_streak_stats.active_streaks %}
+                    <div class="streak-list">
+                        {% for streak in detailed_streak_stats.active_streaks %}
+                        <div class="streak-item mb-3 p-3 bg-light rounded">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h6>{{ streak.task_name }}</h6>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ (streak.current_streak / streak.longest_streak * 100) if streak.longest_streak > 0 else 0 }}%" 
+                                             aria-valuenow="{{ streak.current_streak }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="{{ streak.longest_streak }}">
+                                            {{ streak.current_streak }} 天
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <span class="badge badge-success">{{ streak.status_description }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">暂无活跃的连续记录</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已中断连续记录 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>⏸️ 已中断连续记录</h5>
+                </div>
+                <div class="card-body">
+                    {% if detailed_streak_stats.broken_streaks %}
+                    <div class="streak-list">
+                        {% for streak in detailed_streak_stats.broken_streaks %}
+                        <div class="streak-item mb-3 p-3 bg-light rounded">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h6>{{ streak.task_name }}</h6>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                             style="width: 100%" 
+                                             aria-valuenow="{{ streak.longest_streak }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="{{ streak.longest_streak }}">
+                                            {{ streak.longest_streak }} 天
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <span class="badge badge-warning">{{ streak.status_description }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">暂无中断的连续记录</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 日历网格样式 */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-top: 20px;
+    }
+    
+    .calendar-day {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 5px;
+        border-radius: 5px;
+        min-height: 60px;
+        position: relative;
+    }
+    
+    .calendar-day.today {
+        border: 2px solid #007bff;
+    }
+    
+    .day-number {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .day-mark {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    
+    .calendar-day:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* 工具提示样式 */
+    [data-toggle="tooltip"] {
+        cursor: pointer;
+    }
+    
+    /* 连续记录样式 */
+    .streak-item:hover {
+        background-color: #e9ecef !important;
+        transition: background-color 0.2s;
+    }
+</style>
+
+<script>
+    // 初始化工具提示
+    $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %}

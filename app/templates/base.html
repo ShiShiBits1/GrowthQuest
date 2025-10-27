@@ -236,11 +236,13 @@
                     <a href="{{ url_for('main.list_tasks') }}">📝 任务管理</a>
                     <a href="{{ url_for('main.list_rewards') }}">🎁 奖励管理</a>
                     <a href="{{ url_for('main.add_points') }}">➕ 添加积分</a>
+                    <a href="{{ url_for('analytics.analytics_dashboard') }}">📊 数据分析</a>
                     <a href="{{ url_for('main.honor_wall') }}">🏆 荣誉墙</a>
                     <a href="{{ url_for('main.mall') }}">🛒 积分商城</a>
                 {% else %}
                     <!-- 孩子用户导航 -->
                     <a href="{{ url_for('main.child_dashboard') }}">我的仪表盘</a>
+                    <a href="{{ url_for('analytics.analytics_dashboard') }}">📊 数据分析</a>
                     <a href="{{ url_for('main.list_tasks') }}">任务列表</a>
                     <a href="{{ url_for('main.list_rewards') }}">奖励列表</a>
                     <a href="{{ url_for('main.mall') }}">🛒 积分商城</a>

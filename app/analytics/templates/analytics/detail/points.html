@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}积分详情分析 - 成长数据分析{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>💰 积分详情分析</h2>
+                <a href="{{ url_for('analytics.analytics_dashboard', child_id=child.id) }}" class="btn btn-outline-secondary">返回仪表盘</a>
+            </div>
+            
+            <!-- 时间范围选择 -->
+            <div class="card p-3 mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">选择时间范围：</label>
+                        <form action="{{ url_for('analytics.analytics_detail', child_id=child.id, metric=metric) }}" method="get" class="d-flex">
+                            <select name="time_range" class="form-control" onchange="this.form.submit()">
+                                <option value="7" {% if time_range == '7' %}selected{% endif %}>最近7天</option>
+                                <option value="30" {% if time_range == '30' %}selected{% endif %}>最近30天</option>
+                                <option value="90" {% if time_range == '90' %}selected{% endif %}>最近90天</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="col-md-8 text-right pt-4">
+                        <h5>正在查看：<span class="text-primary">{{ child.name }}</span> 的积分记录</h5>
+                        <p>当前总积分：<strong>{{ child.points }}</strong></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- 积分获取记录 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5>积分获取记录</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if points_records %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>任务名称</th>
+                                            <th>获得积分</th>
+                                            <th>获取时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record, task_name, task_points in points_records %}
+                                        <tr>
+                                            <td>{{ task_name }}</td>
+                                            <td><span class="badge badge-success">+{{ task_points }}</span></td>
+                                            <td>{{ record.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-center text-muted">在所选时间范围内没有积分获取记录</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 积分消耗记录 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-warning text-white">
+                            <h5>积分消耗记录</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if reward_claims %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>奖励名称</th>
+                                            <th>消耗积分</th>
+                                            <th>兑换时间</th>
+                                            <th>状态</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for claim in reward_claims %}
+                                        <tr>
+                                            <td>{{ claim.reward.name }}</td>
+                                            <td><span class="badge badge-warning">-{{ claim.reward.cost }}</span></td>
+                                            <td>{{ claim.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                            <td>
+                                                {% if claim.is_fulfilled %}
+                                                <span class="badge badge-success">已兑现</span>
+                                                {% else %}
+                                                <span class="badge badge-secondary">待兑现</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-center text-muted">在所选时间范围内没有积分消耗记录</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

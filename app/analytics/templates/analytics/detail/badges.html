@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}勋章与成就分析 - 成长奖励系统{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🏆 勋章与成就分析</h1>
+    
+    <!-- 子账户选择器 -->
+    <div class="mb-4">
+        <select id="child-selector" class="form-control w-auto d-inline-block mr-2" onchange="window.location.href = '/analytics/badges?child_id=' + this.value + '&time_range={{ time_range }}'">
+            {% for child in children %}
+                <option value="{{ child.id }}" {% if child.id == selected_child_id %}selected{% endif %}>{{ child.name }}</option>
+            {% endfor %}
+        </select>
+        
+        <!-- 时间范围选择器 -->
+        <select id="time-range" class="form-control w-auto d-inline-block" onchange="window.location.href = '/analytics/badges?child_id={{ selected_child_id }}&time_range=' + this.value">
+            <option value="7d" {% if time_range == '7d' %}selected{% endif %}>最近7天</option>
+            <option value="30d" {% if time_range == '30d' %}selected{% endif %}>最近30天</option>
+            <option value="90d" {% if time_range == '90d' %}selected{% endif %}>最近90天</option>
+            <option value="365d" {% if time_range == '365d' %}selected{% endif %}>最近1年</option>
+        </select>
+        
+        <a href="{{ url_for('analytics.analytics_dashboard', child_id=selected_child_id) }}" class="btn btn-outline-secondary ml-2">返回仪表盘</a>
+    </div>
+    
+    <!-- 勋章概览卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">已获得勋章</h5>
+                    <p class="card-text display-4">{{ badge_analysis.earned_count }}</p>
+                    <small class="text-muted">总勋章数的 {{ badge_analysis.completion_rate|round(1) }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">未获得勋章</h5>
+                    <p class="card-text display-4">{{ badge_analysis.unearned_count }}</p>
+                    <small class="text-muted">继续努力，还有机会获得</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">最近获得</h5>
+                    <p class="card-text display-4">{{ badge_analysis.recent_badges_in_period|length }}</p>
+                    <small class="text-muted">{{ time_range }}内新获得的勋章</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 勋章获取趋势图表 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>勋章获取趋势</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="badgeTrendChart" height="100"></canvas>
+        </div>
+    </div>
+    
+    <!-- 勋章按类型统计 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>勋章等级分布</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="badgeLevelChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>勋章获取进度</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="badgeProgressChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近获得的勋章 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>最近获得的勋章</h5>
+        </div>
+        <div class="card-body">
+            {% if earned_badges %}
+                <div class="row">
+                    {% for child_badge in earned_badges[:8] %}
+                        <div class="col-md-3 mb-3">
+                            <div class="badge-card text-center">
+                                <div class="badge-icon">
+                                    <i class="fas fa-medal text-warning"></i>
+                                </div>
+                                <h6>{{ child_badge.badge.name }}</h6>
+                                <p class="text-sm text-muted">
+                                    等级: {{ child_badge.badge.level }}
+                                </p>
+                                <p class="text-xs text-muted">
+                                    获得时间: {{ child_badge.earned_at.strftime('%Y-%m-%d') }}
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">暂无获得的勋章</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 最接近获得的勋章 -->
+    {% if badge_analysis.closest_badges %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>努力目标</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for badge in badge_analysis.closest_badges %}
+                    <div class="col-md-3 mb-3">
+                        <div class="badge-card text-center p-3 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                            <div class="badge-icon text-4xl mb-2">
+                                {{ badge.icon|default('🏆') }}
+                            </div>
+                            <h6 class="font-medium">{{ badge.name }}</h6>
+                            <p class="text-sm text-muted mb-2">
+                                等级: {{ badge.level }}
+                            </p>
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ badge.progress }}%;" aria-valuenow="{{ badge.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                当前连续: {{ badge.current_streak }} 天 / {{ badge.days_required }} 天
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- 所有勋章列表 -->
+    <div class="card">
+        <div class="card-header">
+            <h5>勋章收藏库</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for badge in badge_analysis.all_badges %}
+                    <div class="col-md-2 mb-3">
+                        <div class="badge-card text-center" style="opacity: {{ 1 if badge.id in earned_badge_ids else 0.5 }}">
+                            <div class="badge-icon">
+                                <i class="fas fa-medal {{ 'text-warning' if badge.id in earned_badge_ids else 'text-gray-400' }}"></i>
+                            </div>
+                            <h6 class="small">{{ badge.name }}</h6>
+                            <p class="text-xs text-muted">
+                                等级: {{ badge.level }}
+                            </p>
+                            <p class="text-xs text-muted">
+                                {{ '已获得' if badge.id in earned_badge_ids else '未获得' }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-card {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.badge-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.badge-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+</style>
+
+<script>
+// 准备数据
+const earnedBadgeIds = new Set({{ earned_badge_ids|tojson }});
+
+// 勋章获取趋势图
+const trendCtx = document.getElementById('badgeTrendChart').getContext('2d');
+const trendData = {{ badge_analysis.badge_acquisition_trend|tojson }};
+const trendLabels = trendData.map(item => new Date(item.month).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' }));
+const trendValues = trendData.map(item => item.badge_count);
+
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: trendLabels,
+        datasets: [{
+            label: '获得勋章数量',
+            data: trendValues,
+            borderColor: '#ffc107',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `勋章数量: ${context.parsed.y}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// 初始化勋章等级分布图表
+const levelCtx = document.getElementById('badgeLevelChart').getContext('2d');
+const levelData = {{ badge_analysis.badges_by_level|tojson }};
+const levelLabels = levelData.map(item => `等级 ${item.level}`);
+const levelEarnedValues = levelData.map(item => item.earned_count);
+const levelTotalValues = levelData.map(item => item.total_count);
+
+new Chart(levelCtx, {
+    type: 'bar',
+    data: {
+        labels: levelLabels,
+        datasets: [
+            {
+                label: '已获得',
+                data: levelEarnedValues,
+                backgroundColor: '#28a745'
+            },
+            {
+                label: '未获得',
+                data: levelTotalValues.map((total, index) => total - levelEarnedValues[index]),
+                backgroundColor: '#e9ecef'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.parsed.y} 个`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                stacked: true,
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+
+// 初始化勋章进度图表
+const progressCtx = document.getElementById('badgeProgressChart').getContext('2d');
+const closestBadges = {{ badge_analysis.closest_badges|tojson }};
+
+if (closestBadges.length > 0) {
+    const progressLabels = closestBadges.map(badge => badge.name.length > 10 ? badge.name.substring(0, 10) + '...' : badge.name);
+    const progressValues = closestBadges.map(badge => badge.progress || 0);
+
+    new Chart(progressCtx, {
+        type: 'doughnut',
+        data: {
+            labels: progressLabels,
+            datasets: [{
+                data: progressValues,
+                backgroundColor: [
+                    '#ff6384',
+                    '#36a2eb',
+                    '#ffce56',
+                    '#4bc0c0',
+                    '#9966ff'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const badge = closestBadges[context.dataIndex];
+                            return `${badge.name}: ${context.parsed}% (${badge.current_streak}/${badge.days_required}天)`;
+                        }
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+}
+</script>
+{% endblock %}

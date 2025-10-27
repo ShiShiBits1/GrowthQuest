@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}成长数据分析 - 成长奖励系统{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card p-5">
+                <div class="display-1 mb-4">📊</div>
+                <h3 class="mb-3">暂无可分析数据</h3>
+                <p class="text-muted mb-5">请先添加孩子并开始使用成长奖励系统</p>
+                <a href="{{ url_for('main.list_children') }}" class="btn btn-primary">添加孩子</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
