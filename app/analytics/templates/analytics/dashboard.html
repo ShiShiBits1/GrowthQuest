@@ -16,6 +16,7 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label font-medium">选择孩子：</label>
                         <form action="{{ url_for('analytics.analytics_dashboard') }}" method="get" class="d-flex">
+                            <input type="hidden" name="time_range" value="{{ time_range }}">
                             <select name="child_id" class="form-control border rounded-lg shadow-sm transition-all duration-300 focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()">
                                 {% for child in children %}
                                 <option value="{{ child.id }}" {% if child.id == selected_child.id %}selected{% endif %}>
@@ -29,7 +30,8 @@
                     
                     <div class="col-md-{% if children|length > 1 %}6{% else %}12{% endif %}">
                         <label class="form-label font-medium">选择时间范围：</label>
-                        <form action="{{ url_for('analytics.analytics_dashboard', child_id=selected_child.id) }}" method="get" class="d-flex">
+                        <form action="{{ url_for('analytics.analytics_dashboard') }}" method="get" class="d-flex">
+                            <input type="hidden" name="child_id" value="{{ selected_child.id }}">
                             <select name="time_range" class="form-control border rounded-lg shadow-sm transition-all duration-300 focus:border-primary focus:ring-1 focus:ring-primary" onchange="this.form.submit()">
                                 <option value="7" {% if time_range == '7' %}selected{% endif %}>最近7天</option>
                                 <option value="30" {% if time_range == '30' %}selected{% endif %}>最近30天</option>
