@@ -556,11 +556,15 @@ def edit_task_record(record_id):
             date_str = request.form['date']
             
             # 转换日期字符串为datetime对象
-            from datetime import datetime
+            from datetime import datetime, date
             completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+            task_date = completed_at.date()
             
             # 获取新任务信息
             new_task = Task.query.get_or_404(task_id)
+            
+            # 保存原任务ID用于后续处理
+            old_task_id = record.task_id
             
             # 如果记录已确认，需要调整积分
             if record.is_confirmed:
@@ -572,6 +576,113 @@ def edit_task_record(record_id):
             # 更新记录信息
             record.task_id = task_id
             record.completed_at = completed_at
+            
+            # 如果记录已确认且修改了任务或日期，需要重新计算连续天数和勋章
+            if record.is_confirmed:
+                # 如果修改了任务类型，需要处理旧任务的连续记录
+                if old_task_id != task_id:
+                    # 对于原任务，需要重新计算连续记录
+                    old_streak = TaskStreak.query.filter_by(child_id=record.child_id, task_id=old_task_id).first()
+                    if old_streak:
+                        # 重新计算原任务的连续天数（这里简化处理，实际可能需要重新计算所有记录）
+                        # 获取该任务的所有已确认记录
+                        old_records = TaskRecord.query.filter_by(
+                            child_id=record.child_id,
+                            task_id=old_task_id,
+                            is_confirmed=True
+                        ).order_by(TaskRecord.completed_at.desc()).all()
+                        
+                        if old_records:
+                            # 重新计算连续天数逻辑（简化版）
+                            last_date = old_records[0].completed_at.date()
+                            current_streak = 1
+                            
+                            for r in old_records[1:]:
+                                r_date = r.completed_at.date()
+                                if (last_date - r_date).days == 1:
+                                    current_streak += 1
+                                    last_date = r_date
+                                else:
+                                    break
+                            
+                            old_streak.current_streak = current_streak
+                            old_streak.last_completed_date = old_records[0].completed_at.date()
+                    
+                # 对于新任务，获取或创建连续记录
+                streak = TaskStreak.query.filter_by(child_id=record.child_id, task_id=task_id).first()
+                
+                if not streak:
+                    # 创建新的连续记录
+                    streak = TaskStreak(
+                        child_id=record.child_id,
+                        task_id=task_id,
+                        current_streak=1,
+                        last_completed_date=task_date,
+                        longest_streak=1
+                    )
+                    db.session.add(streak)
+                    
+                    # 确保任务有对应的勋章
+                    existing_badge = Badge.query.filter_by(task_id=task_id).first()
+                    if not existing_badge:
+                        # 为该任务创建默认勋章
+                        badge = Badge(
+                            name=f"{new_task.name}坚持达人",
+                            description=f"连续30天完成{new_task.name}任务，获得此勋章！",
+                            icon="🏆",
+                            task_id=task_id,
+                            days_required=30,
+                            level="初级",
+                            points_reward=10
+                        )
+                        db.session.add(badge)
+                else:
+                    # 重新计算连续天数（基于所有已确认的记录）
+                    # 获取该任务的所有已确认记录
+                    all_records = TaskRecord.query.filter_by(
+                        child_id=record.child_id,
+                        task_id=task_id,
+                        is_confirmed=True
+                    ).order_by(TaskRecord.completed_at.desc()).all()
+                    
+                    if all_records:
+                        # 重新计算连续天数
+                        last_date = all_records[0].completed_at.date()
+                        current_streak = 1
+                        
+                        for r in all_records[1:]:
+                            r_date = r.completed_at.date()
+                            if (last_date - r_date).days == 1:
+                                current_streak += 1
+                                last_date = r_date
+                            else:
+                                break
+                        
+                        streak.current_streak = current_streak
+                        streak.last_completed_date = all_records[0].completed_at.date()
+                        
+                        # 更新最长连续天数
+                        if current_streak > streak.longest_streak:
+                            streak.longest_streak = current_streak
+                    
+                    # 检查并颁发勋章
+                    badges = Badge.query.filter_by(task_id=task_id).order_by(Badge.days_required).all()
+                    new_badge_earned = False
+                    
+                    for badge in badges:
+                        # 检查是否已经获得该勋章
+                        existing_badge = ChildBadge.query.filter_by(child_id=record.child_id, badge_id=badge.id).first()
+                        
+                        # 如果未获得该勋章，且连续天数达到要求
+                        if not existing_badge and streak.current_streak >= badge.days_required:
+                            # 创建勋章记录
+                            child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                            db.session.add(child_badge)
+                            
+                            # 给予积分奖励
+                            record.child.points += badge.points_reward
+                            flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                            new_badge_earned = True
             
             db.session.commit()
             flash('任务记录更新成功')
