@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center my-4">📊 {{ child.name }}的学习统计</h2>
+    
+    <div class="row mb-4">
+        <!-- 总体学习进度卡片 -->
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">总体完成率</h5>
+                    <p class="card-text display-4 font-weight-bold">{{ (completed_resources / total_resources * 100)|int }}%</p>
+                    <p class="card-text">
+                        已完成 {{ completed_resources }} / {{ total_resources }} 个资源
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 学习资源数量卡片 -->
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">已完成资源</h5>
+                    <p class="card-text display-4 font-weight-bold">{{ completed_resources }}</p>
+                    <p class="card-text">个学习资源</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 学习资源总数卡片 -->
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">可用资源</h5>
+                    <p class="card-text display-4 font-weight-bold">{{ total_resources }}</p>
+                    <p class="card-text">个学习资源</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近学习记录 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>最近学习记录</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_progress %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>学习资源</th>
+                            <th>进度</th>
+                            <th>最后学习时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for progress in recent_progress %}
+                        <tr>
+                            <td>{{ progress.resource.title }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar {{ 'bg-success' if progress.is_completed else 'bg-primary' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ progress.progress }}%" 
+                                         aria-valuenow="{{ progress.progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ progress.progress|int }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ progress.last_accessed.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if progress.is_completed %}
+                                <span class="badge badge-success">已完成</span>
+                                {% else %}
+                                <span class="badge badge-primary">进行中</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.learning_resource_detail', resource_id=progress.resource_id, child_id=child.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    继续学习
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                暂无学习记录
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.learning_resources', child_id=child.id) }}" 
+           class="btn btn-primary">
+            浏览学习资源
+        </a>
+        <a href="{{ url_for('main.child_detail', child_id=child.id) }}" 
+           class="btn btn-outline-secondary ml-2">
+            返回孩子详情
+        </a>
+    </div>
+</div>
+{% endblock %}

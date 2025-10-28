@@ -2,7 +2,8 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from app.models import User, Child, Task, Reward, TaskRecord, RewardRecord, Badge, ChildBadge, TaskStreak, TaskCategory
+from app.models import User, Child, Task, Reward, TaskRecord, RewardRecord, Badge, ChildBadge, TaskStreak, TaskCategory, LearningCategory, LearningResource, LearningProgress
+from datetime import datetime
 from app.main import main
 
 # 登录路由
@@ -204,6 +205,170 @@ def edit_child(child_id):
         db.session.commit()
         flash('孩子信息更新成功')
         return redirect(url_for('main.child_detail', child_id=child.id))
+
+
+# 在线学习功能相关路由
+@main.route('/learning')
+@login_required
+def learning_resources():
+    """学习资源首页，展示所有分类"""
+    categories = LearningCategory.query.all()
+    # 如果是家长，可能需要选择孩子
+    if hasattr(current_user, 'children'):
+        children = current_user.children
+        selected_child_id = request.args.get('child_id')
+        selected_child = None
+        if selected_child_id:
+            selected_child = Child.query.get(int(selected_child_id))
+        elif children:
+            selected_child = children[0]  # 默认选择第一个孩子
+        return render_template('learning/index.html', categories=categories, 
+                              children=children, selected_child=selected_child)
+    else:  # 孩子用户
+        child = current_user
+        return render_template('learning/index.html', categories=categories, child=child)
+
+
+@main.route('/learning/category/<int:category_id>')
+@login_required
+def learning_category(category_id):
+    """查看特定分类的学习资源"""
+    category = LearningCategory.query.get_or_404(category_id)
+    resources = LearningResource.query.filter_by(category_id=category_id, is_active=True).all()
+    
+    # 获取孩子信息
+    child = None
+    if hasattr(current_user, 'children'):  # 家长用户
+        child_id = request.args.get('child_id')
+        if child_id:
+            child = Child.query.get_or_404(int(child_id))
+    else:  # 孩子用户
+        child = current_user
+    
+    # 获取孩子的学习进度信息
+    progress_info = {}
+    if child:
+        progress_records = LearningProgress.query.filter_by(child_id=child.id).all()
+        for record in progress_records:
+            progress_info[record.resource_id] = {
+                'progress': record.progress,
+                'is_completed': record.is_completed,
+                'last_accessed': record.last_accessed
+            }
+    
+    return render_template('learning/category.html', category=category, 
+                          resources=resources, child=child, progress_info=progress_info)
+
+
+@main.route('/learning/resource/<int:resource_id>')
+@login_required
+def learning_resource_detail(resource_id):
+    """学习资源详情页"""
+    resource = LearningResource.query.get_or_404(resource_id)
+    
+    # 获取孩子信息
+    child = None
+    if hasattr(current_user, 'children'):  # 家长用户
+        child_id = request.args.get('child_id')
+        if child_id:
+            child = Child.query.get_or_404(int(child_id))
+    else:  # 孩子用户
+        child = current_user
+    
+    # 获取或创建学习进度记录
+    progress = None
+    if child:
+        progress = LearningProgress.query.filter_by(
+            child_id=child.id,
+            resource_id=resource_id
+        ).first()
+        
+        if not progress and child == current_user:  # 孩子用户可以自动创建进度记录
+            progress = LearningProgress(
+                child_id=child.id,
+                resource_id=resource_id
+            )
+            db.session.add(progress)
+            db.session.commit()
+    
+    return render_template('learning/resource.html', resource=resource, 
+                          child=child, progress=progress)
+
+
+@main.route('/learning/progress/update', methods=['POST'])
+@login_required
+def update_learning_progress():
+    """更新学习进度"""
+    if not isinstance(current_user, Child):
+        return {'success': False, 'message': '只有孩子用户可以更新学习进度'}
+    
+    try:
+        resource_id = int(request.form.get('resource_id'))
+        progress = float(request.form.get('progress', 0))
+        last_watched_time = int(request.form.get('last_watched_time', 0))
+        
+        # 获取或创建进度记录
+        record = LearningProgress.query.filter_by(
+            child_id=current_user.id,
+            resource_id=resource_id
+        ).first()
+        
+        if not record:
+            record = LearningProgress(
+                child_id=current_user.id,
+                resource_id=resource_id
+            )
+            db.session.add(record)
+        
+        # 更新进度信息
+        record.progress = min(progress, 100.0)  # 限制进度最大为100%
+        record.last_watched_time = last_watched_time
+        record.last_accessed = datetime.utcnow()
+        record.access_count += 1
+        
+        # 检查是否完成
+        if record.progress >= 100 and not record.is_completed:
+            record.is_completed = True
+            # 可以在这里添加完成学习资源的积分奖励逻辑
+            current_user.points += 10  # 例如完成一个学习资源奖励10积分
+        
+        db.session.commit()
+        return {'success': True}
+    except Exception as e:
+        db.session.rollback()
+        return {'success': False, 'message': str(e)}
+
+
+@main.route('/learning/stats/<int:child_id>')
+@login_required
+def learning_statistics(child_id):
+    """查看孩子的学习统计信息"""
+    child = Child.query.get_or_404(child_id)
+    
+    # 权限检查
+    if hasattr(current_user, 'children') and child not in current_user.children:
+        flash('无权访问此孩子的学习统计')
+        return redirect(url_for('main.dashboard'))
+    
+    # 获取学习统计数据
+    total_resources = LearningResource.query.filter_by(is_active=True).count()
+    completed_resources = LearningProgress.query.filter_by(
+        child_id=child_id,
+        is_completed=True
+    ).count()
+    
+    # 获取最近学习记录
+    recent_progress = LearningProgress.query.filter_by(child_id=child_id).order_by(
+        LearningProgress.last_accessed.desc()
+    ).limit(5).all()
+    
+    # 获取学习时长统计（基于最后访问时间差）
+    # 这里可以添加更复杂的学习时长计算逻辑
+    
+    return render_template('learning/stats.html', child=child,
+                          total_resources=total_resources,
+                          completed_resources=completed_resources,
+                          recent_progress=recent_progress)
     
     return render_template('edit_child.html', child=child)
 

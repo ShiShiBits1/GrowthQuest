@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center my-4">📚 小孩在线学习</h2>
+    
+    {% if children %}
+    <!-- 家长用户显示孩子选择器 -->
+    <div class="mb-4">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="childDropdown"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                选择孩子: {{ selected_child.name if selected_child else '请选择' }}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="childDropdown">
+                {% for c in children %}
+                <a class="dropdown-item" href="{{ url_for('main.learning_resources', child_id=c.id) }}">
+                    {{ c.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-shadow transition-shadow">
+                <div class="card-body">
+                    <div class="text-center">
+                        <h3 class="card-title display-4 mb-3">{{ category.icon }}</h3>
+                        <h4 class="card-title">{{ category.name }}</h4>
+                    </div>
+                    <p class="card-text text-center mt-2">{{ category.description }}</p>
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('main.learning_category', category_id=category.id) }}{% if selected_child %}?child_id={{ selected_child.id }}{% endif %}" 
+                           class="btn btn-outline-primary">
+                            浏览资源
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                暂无学习分类，请稍后再来查看
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if child %}
+    <div class="mt-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ child.name }}的学习统计</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('main.learning_statistics', child_id=child.id) }}" 
+                   class="btn btn-primary btn-block">
+                    查看详细学习统计
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.transition-shadow {
+    transition: box-shadow 0.3s ease;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

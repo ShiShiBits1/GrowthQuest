@@ -623,3 +623,45 @@ class TaskStreak(db.Model):
 
 # 将分析方法添加到Child类
 add_analysis_methods(Child)
+
+
+# 在线学习功能相关模型
+class LearningCategory(db.Model):
+    """学习资源分类模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)  # 分类名称
+    description = db.Column(db.Text)  # 分类描述
+    icon = db.Column(db.String(64), default='📚')  # 分类图标
+    # 关联到学习资源
+    resources = db.relationship('LearningResource', backref='category', lazy='dynamic')
+
+
+class LearningResource(db.Model):
+    """学习资源模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(256), nullable=False)  # 资源标题
+    description = db.Column(db.Text)  # 资源描述
+    resource_type = db.Column(db.String(64), nullable=False)  # 资源类型：视频、文章、音频等
+    content_url = db.Column(db.String(512))  # 资源链接
+    thumbnail_url = db.Column(db.String(512))  # 缩略图链接
+    duration = db.Column(db.Integer)  # 资源时长（秒）
+    difficulty_level = db.Column(db.String(32))  # 难度级别：初级、中级、高级
+    category_id = db.Column(db.Integer, db.ForeignKey('learning_category.id'), nullable=False)  # 分类外键
+    is_active = db.Column(db.Boolean, default=True)  # 是否激活
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间
+    # 关联到学习进度
+    progress_records = db.relationship('LearningProgress', backref='resource', lazy='dynamic')
+
+
+class LearningProgress(db.Model):
+    """孩子的学习进度模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=False)  # 孩子ID
+    resource_id = db.Column(db.Integer, db.ForeignKey('learning_resource.id'), nullable=False)  # 资源ID
+    progress = db.Column(db.Float, default=0)  # 学习进度（0-100%）
+    last_watched_time = db.Column(db.Integer, default=0)  # 上次观看时间点（秒）
+    is_completed = db.Column(db.Boolean, default=False)  # 是否完成
+    last_accessed = db.Column(db.DateTime, default=datetime.utcnow)  # 最后访问时间
+    access_count = db.Column(db.Integer, default=0)  # 访问次数
+    # 关联到孩子
+    child = db.relationship('Child', backref=db.backref('learning_progress', lazy='dynamic'))
