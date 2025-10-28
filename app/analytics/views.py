@@ -58,8 +58,8 @@ def analytics_dashboard():
     # 获取任务分类分布数据
     category_distribution = Child.get_task_category_distribution(selected_child.id, start_date, end_date)
     
-    # 获取习惯养成时间线数据（最近30天）
-    habit_timeline = Child.get_habit_timeline(selected_child.id, days=30)
+    # 获取习惯养成时间线数据（使用用户选择的时间范围）
+    habit_timeline = Child.get_habit_timeline(selected_child.id, days=days)
     
     # 获取详细连续天数统计
     detailed_streak_stats = Child.get_detailed_streak_statistics(selected_child.id)
@@ -179,8 +179,8 @@ def analytics_detail(child_id, metric):
     
     elif metric == 'habits':
         # 习惯养成详情
-        # 获取习惯养成时间线（最近30天）
-        habit_timeline = Child.get_habit_timeline(child.id, days=30)
+        # 获取习惯养成时间线（使用用户选择的时间范围）
+        habit_timeline = Child.get_habit_timeline(child.id, days=days)
         
         # 获取详细连续天数统计
         detailed_streak_stats = Child.get_detailed_streak_statistics(child.id)

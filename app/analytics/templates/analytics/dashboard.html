@@ -433,96 +433,152 @@
     
     // 习惯养成趋势图
     {% if habit_timeline %}
-    const habitCtx = document.getElementById('habitTrendChart').getContext('2d');
-    
-    // 处理最近7天的数据用于图表展示
-    const recentHabitData = [
-        {% for item in habit_timeline[-7:] %}
-            {
-                date: '{{ item.date.strftime('%m-%d') }}',
-                completed: {{ item.completed_count }}
-            },
-        {% endfor %}
-    ];
-    
-    const habitData = {
-        labels: recentHabitData.map(item => item.date),
-        datasets: [{
-            label: '每日完成任务数',
-            data: recentHabitData.map(item => item.completed),
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            pointHoverBackgroundColor: 'white',
-            pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
-            pointHoverBorderWidth: 2
-        }]
-    };
-    
-    const habitChart = new Chart(habitCtx, {
-        type: 'line',
-        data: habitData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    title: {
-                        display: true,
-                        text: '完成任务数',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    },
-                    ticks: {
-                        stepSize: 1
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: '日期',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `完成任务: ${context.parsed.y} 个`;
-                        }
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            animation: {
-                duration: 2000,
-                easing: 'easeOutQuart'
-            }
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+        // 添加更详细的调试信息
+        console.log('时间线数据总长度:', {{ habit_timeline|length }});
+        console.log('时间范围参数:', '{{ time_range }}');
+        
+        // 输出原始数据进行调试
+        const timelineData = JSON.parse('{{ habit_timeline|tojson|safe }}');
+        console.log('完整时间线数据:', timelineData);
+        
+        // 找出有数据的日期
+        const datesWithData = timelineData.filter(item => item.completed_count > 0);
+        console.log('有完成任务的日期详情:', datesWithData);
+        
+        // 特别检查10-27的数据
+        const date27 = timelineData.find(item => {
+            const d = new Date(item.date);
+            return d.getMonth() + 1 === 10 && d.getDate() === 27;
+        });
+        console.log('10-27的数据:', date27);
+        
+        const habitCtx = document.getElementById('habitTrendChart');
+        if (!habitCtx) {
+            console.error('习惯养成趋势图容器未找到');
+            return;
         }
+        
+        const ctx = habitCtx.getContext('2d');
+        
+        // 修改为使用时间范围内的所有数据，而不仅仅是最近7天
+        const recentHabitData = [
+            {% for item in habit_timeline %}
+                {
+                    date: '{{ item.date.strftime('%m-%d') }}',
+                    completed: {{ item.completed_count }}
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // 添加调试信息
+        console.log('处理后的数据点数量:', recentHabitData.length);
+        console.log('习惯养成数据:', recentHabitData);
+        
+        // 从数据中过滤出有完成任务的日期
+        const completedDates = recentHabitData.filter(item => item.completed > 0);
+        console.log('有完成任务的日期:', completedDates);
+        
+        const habitData = {
+            labels: recentHabitData.map(item => item.date),
+            datasets: [{
+                label: '每日完成任务数',
+                data: recentHabitData.map(item => item.completed),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointHoverBackgroundColor: 'white',
+                pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+                pointHoverBorderWidth: 2
+            }]
+        };
+    
+        const habitChart = new Chart(ctx, {
+            type: 'line',
+            data: habitData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        title: {
+                            display: true,
+                            text: '完成任务数',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            // 确保y轴范围至少到1，即使所有数据都是0
+                            callback: function(value) {
+                                if (value >= 0) return value;
+                                return '';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '日期',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `完成任务数: ${context.parsed.y}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    });
+    {% else %}
+    // 添加无数据的调试信息
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('没有获取到习惯养成数据');
     });
     {% endif %}
 </script>

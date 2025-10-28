@@ -487,28 +487,43 @@ def add_analysis_methods(cls):
     # 获取习惯养成时间线
     @classmethod
     def get_habit_timeline(cls, child_id, days=30):
+        from datetime import datetime
+        
         start_date = date.today() - timedelta(days=days)
+        end_date = date.today()
+        
+        # 将date对象转换为datetime对象用于查询
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
         
         # 查询指定时间范围内的任务完成记录，按日期分组
+        # 修复日期比较问题，确保能正确获取任务完成数据
         daily_completions = db.session.query(
             func.date(TaskRecord.completed_at).label('date'),
             func.count(TaskRecord.id).label('completed_count'),
-            func.count(func.distinct(Task.id)).label('unique_tasks')
+            func.count(func.distinct(TaskRecord.task_id)).label('unique_tasks')
         ).filter(
             TaskRecord.child_id == child_id,
             TaskRecord.is_confirmed == True,
-            TaskRecord.completed_at >= start_date
+            TaskRecord.completed_at >= start_datetime,
+            TaskRecord.completed_at <= end_datetime
         ).group_by(func.date(TaskRecord.completed_at)).all()
+        
+        # 创建字典以便快速查找，确保日期类型一致
+        completion_dict = {str(item.date): {'completed_count': item.completed_count, 'unique_tasks': item.unique_tasks} 
+                          for item in daily_completions}
         
         # 构建完整的时间线，包括没有任务完成的日期
         timeline = []
         current_date = start_date
-        while current_date <= date.today():
-            completion_data = next((item for item in daily_completions if item.date == current_date), None)
+        while current_date <= end_date:
+            date_str = str(current_date)
+            completion_data = completion_dict.get(date_str, None)
+            
             timeline.append({
                 'date': current_date,
-                'completed_count': completion_data.completed_count if completion_data else 0,
-                'unique_tasks': completion_data.unique_tasks if completion_data else 0,
+                'completed_count': completion_data['completed_count'] if completion_data else 0,
+                'unique_tasks': completion_data['unique_tasks'] if completion_data else 0,
                 'has_completions': completion_data is not None
             })
             current_date += timedelta(days=1)
