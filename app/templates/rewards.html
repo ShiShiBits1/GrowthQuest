@@ -4,6 +4,33 @@
 
 {% block content %}
 <h1>奖励管理</h1>
+<style>
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 30px; /* 增加表格与按钮之间的间距 */
+  }
+  table tr {
+    height: 50px; /* 增加表格行高 */
+  }
+  table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  table th,
+  table td {
+    padding: 12px 15px; /* 增加单元格内边距 */
+    text-align: left;
+  }
+  table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  .button {
+    margin-top: 15px;
+    padding: 10px 20px;
+  }
+</style>
 {% if rewards %}
 <table>
     <tr>
@@ -33,6 +60,8 @@
 <p>您还没有添加奖励</p>
 {% endif %}
 {% if is_parent %}
-<a href="{{ url_for('main.add_reward') }}" class="button">添加奖励</a>
+<div style="margin-top: 30px;">
+  <a href="{{ url_for('main.add_reward') }}" class="button">添加奖励</a>
+</div>
 {% endif %}
 {% endblock %}

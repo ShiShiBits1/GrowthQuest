@@ -4,6 +4,38 @@
 
 {% block content %}
 <h1>添加任务</h1>
+<style>
+  .form-group {
+    margin-bottom: 25px; /* 增加表单组之间的间距 */
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  .form-group textarea {
+    resize: vertical;
+  }
+  button,
+  .button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .button.secondary {
+    margin-top: 0;
+  }
+</style>
 <form method="POST">
     <div class="form-group">
         <label for="name">任务名称</label>

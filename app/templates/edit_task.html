@@ -4,6 +4,44 @@
 
 {% block content %}
 <h1>编辑任务</h1>
+<style>
+  .form-group {
+    margin-bottom: 25px; /* 增加表单组之间的间距 */
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  .form-group textarea {
+    resize: vertical;
+  }
+  button,
+  .button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .button.secondary {
+    margin-top: 0;
+  }
+  .form-actions {
+    margin-top: 30px;
+  }
+  .form-actions .button {
+    margin-right: 15px;
+  }
+</style>
 <form method="post">
     <div class="form-group">
         <label for="name">任务名称</label>
@@ -42,8 +80,7 @@
     <button type="submit" class="button">保存修改</button>
 </form>
 
-<br>
-<div style="display: flex; gap: 10px;">
+<div class="form-actions" style="display: flex; gap: 15px;">
     <a href="{{ url_for('main.list_tasks') }}" class="button">取消</a>
     <form action="{{ url_for('main.delete_task', task_id=task.id) }}" method="POST" style="display: inline;">
         <button type="submit" class="button" style="background-color: #dc3545; color: white;" onclick="return confirm('确定要删除这个任务吗？如果有任务记录使用该任务，将无法删除。')">删除任务</button>

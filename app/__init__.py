@@ -103,7 +103,11 @@ def create_app(config_name=None):
           
         # 确定错误码，确保是整数类型
         error_code = getattr(error, 'code', None)
-        status_code = int(error_code) if error_code is not None else 500
+        # 安全地转换为整数，处理非整数情况
+        try:
+            status_code = int(error_code) if error_code is not None else 500
+        except (ValueError, TypeError):
+            status_code = 500
         
         # 对于开发环境，返回详细错误信息
         if app.debug:

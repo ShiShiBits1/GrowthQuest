@@ -583,28 +583,47 @@ def add_badge():
     tasks = Task.query.filter_by(is_active=True).all()
     
     if request.method == 'POST':
-        name = request.form['name']
-        description = request.form.get('description', '')
-        icon = request.form.get('icon', '🏆')
-        task_id = int(request.form['task_id'])
-        days_required = int(request.form['days_required'])
-        level = request.form.get('level', '初级')
-        points_reward = int(request.form.get('points_reward', 10))
-        
-        # 创建新徽章
-        badge = Badge(
-            name=name,
-            description=description,
-            icon=icon,
-            task_id=task_id,
-            days_required=days_required,
-            level=level,
-            points_reward=points_reward
-        )
-        db.session.add(badge)
-        db.session.commit()
-        flash('徽章添加成功')
-        return redirect(url_for('main.list_badges'))
+        try:
+            name = request.form['name']
+            description = request.form.get('description', '')
+            icon = request.form.get('icon', '🏆')
+            
+            # 安全地获取并转换整数字段
+            task_id = int(request.form['task_id'])
+            
+            completions_required = request.form.get('completions_required', '0')
+            completions_required = int(completions_required) if completions_required else 0
+            
+            days_required = request.form.get('days_required', '0')
+            days_required = int(days_required) if days_required else 0
+            
+            level = request.form.get('level', '初级')
+            
+            points_reward = request.form.get('points_reward', '10')
+            points_reward = int(points_reward) if points_reward else 10
+            
+            # 创建新徽章
+            badge = Badge(
+                name=name,
+                description=description,
+                icon=icon,
+                task_id=task_id,
+                completions_required=completions_required,
+                days_required=days_required,
+                level=level,
+                points_reward=points_reward
+            )
+            db.session.add(badge)
+            db.session.commit()
+            flash('徽章添加成功')
+            return redirect(url_for('main.list_badges'))
+        except ValueError as e:
+            flash(f'数据格式错误，请确保所有数字字段输入正确: {str(e)}')
+            return redirect(url_for('main.add_badge'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'添加徽章时发生错误: {str(e)}')
+            return redirect(url_for('main.add_badge'))
     
     return render_template('add_badge.html', tasks=tasks)
 
@@ -621,17 +640,34 @@ def edit_badge(badge_id):
     tasks = Task.query.filter_by(is_active=True).all()
     
     if request.method == 'POST':
-        badge.name = request.form['name']
-        badge.description = request.form.get('description', '')
-        badge.icon = request.form.get('icon', '🏆')
-        badge.task_id = int(request.form['task_id'])
-        badge.days_required = int(request.form['days_required'])
-        badge.level = request.form.get('level', '初级')
-        badge.points_reward = int(request.form.get('points_reward', 10))
-        
-        db.session.commit()
-        flash('徽章更新成功')
-        return redirect(url_for('main.list_badges'))
+        try:
+            badge.name = request.form['name']
+            badge.description = request.form.get('description', '')
+            badge.icon = request.form.get('icon', '🏆')
+            badge.task_id = int(request.form['task_id'])
+            
+            # 安全地获取并转换整数字段
+            completions_required = request.form.get('completions_required', '0')
+            badge.completions_required = int(completions_required) if completions_required else 0
+            
+            days_required = request.form.get('days_required', '0')
+            badge.days_required = int(days_required) if days_required else 0
+            
+            badge.level = request.form.get('level', '初级')
+            
+            points_reward = request.form.get('points_reward', '10')
+            badge.points_reward = int(points_reward) if points_reward else 10
+            
+            db.session.commit()
+            flash('徽章更新成功')
+            return redirect(url_for('main.list_badges'))
+        except ValueError as e:
+            flash(f'数据格式错误，请确保所有数字字段输入正确: {str(e)}')
+            return redirect(url_for('main.edit_badge', badge_id=badge_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'更新徽章时发生错误: {str(e)}')
+            return redirect(url_for('main.edit_badge', badge_id=badge_id))
     
     return render_template('edit_badge.html', badge=badge, tasks=tasks)
 
@@ -792,8 +828,8 @@ def confirm_task_record(record_id):
                 streak.longest_streak = streak.current_streak
             
             # 检查并颁发勋章
-            # 获取该任务的所有勋章（按天数要求从低到高排序）
-            badges = Badge.query.filter_by(task_id=record.task_id).order_by(Badge.days_required).all()
+            # 获取该任务的所有勋章（按要求从低到高排序）
+            badges = Badge.query.filter_by(task_id=record.task_id).all()
             
             # 记录是否有新勋章被颁发
             new_badge_earned = False
@@ -802,16 +838,38 @@ def confirm_task_record(record_id):
                 # 检查是否已经获得该勋章
                 existing_badge = ChildBadge.query.filter_by(child_id=record.child_id, badge_id=badge.id).first()
                 
-                # 如果未获得该勋章，且连续天数达到要求
-                if not existing_badge and streak.current_streak >= badge.days_required:
-                    # 创建勋章记录
-                    child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
-                    db.session.add(child_badge)
+                # 判断是基于完成次数还是连续天数
+                if badge.completions_required > 0:
+                    # 基于完成次数的勋章
+                    # 计算该任务的完成次数
+                    completion_count = db.session.query(func.count(TaskRecord.id)).filter(
+                        TaskRecord.child_id == record.child_id,
+                        TaskRecord.task_id == record.task_id,
+                        TaskRecord.is_confirmed == True
+                    ).scalar()
                     
-                    # 给予积分奖励
-                    record.child.points += badge.points_reward
-                    flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
-                    new_badge_earned = True
+                    # 如果未获得该勋章，且完成次数达到要求
+                    if not existing_badge and completion_count >= badge.completions_required:
+                        # 创建勋章记录
+                        child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                        db.session.add(child_badge)
+                        
+                        # 给予积分奖励
+                        record.child.points += badge.points_reward
+                        flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                        new_badge_earned = True
+                else:
+                    # 基于连续天数的勋章
+                    # 如果未获得该勋章，且连续天数达到要求
+                    if not existing_badge and streak.current_streak >= badge.days_required:
+                        # 创建勋章记录
+                        child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                        db.session.add(child_badge)
+                        
+                        # 给予积分奖励
+                        record.child.points += badge.points_reward
+                        flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                        new_badge_earned = True
             
             # 如果没有新勋章被颁发但连续天数有更新，也显示进度更新信息
             if not new_badge_earned and streak.current_streak > 0:
@@ -962,23 +1020,45 @@ def edit_task_record(record_id):
                             streak.longest_streak = current_streak
                     
                     # 检查并颁发勋章
-                    badges = Badge.query.filter_by(task_id=task_id).order_by(Badge.days_required).all()
+                    badges = Badge.query.filter_by(task_id=task_id).all()
                     new_badge_earned = False
                     
                     for badge in badges:
                         # 检查是否已经获得该勋章
                         existing_badge = ChildBadge.query.filter_by(child_id=record.child_id, badge_id=badge.id).first()
                         
-                        # 如果未获得该勋章，且连续天数达到要求
-                        if not existing_badge and streak.current_streak >= badge.days_required:
-                            # 创建勋章记录
-                            child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
-                            db.session.add(child_badge)
+                        # 判断是基于完成次数还是连续天数
+                        if badge.completions_required > 0:
+                            # 基于完成次数的勋章
+                            # 计算该任务的完成次数
+                            completion_count = db.session.query(func.count(TaskRecord.id)).filter(
+                                TaskRecord.child_id == record.child_id,
+                                TaskRecord.task_id == task_id,
+                                TaskRecord.is_confirmed == True
+                            ).scalar()
                             
-                            # 给予积分奖励
-                            record.child.points += badge.points_reward
-                            flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
-                            new_badge_earned = True
+                            # 如果未获得该勋章，且完成次数达到要求
+                            if not existing_badge and completion_count >= badge.completions_required:
+                                # 创建勋章记录
+                                child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                                db.session.add(child_badge)
+                                
+                                # 给予积分奖励
+                                record.child.points += badge.points_reward
+                                flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                                new_badge_earned = True
+                        else:
+                            # 基于连续天数的勋章
+                            # 如果未获得该勋章，且连续天数达到要求
+                            if not existing_badge and streak.current_streak >= badge.days_required:
+                                # 创建勋章记录
+                                child_badge = ChildBadge(child_id=record.child_id, badge_id=badge.id)
+                                db.session.add(child_badge)
+                                
+                                # 给予积分奖励
+                                record.child.points += badge.points_reward
+                                flash(f"🎉 {record.child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                                new_badge_earned = True
             
             db.session.commit()
             flash('任务记录更新成功')
@@ -1144,8 +1224,8 @@ def add_points():
                     streak.longest_streak = streak.current_streak
                 
                 # 检查并颁发勋章
-                # 获取该任务的所有勋章（按天数要求从低到高排序）
-                badges = Badge.query.filter_by(task_id=task_id).order_by(Badge.days_required).all()
+                # 获取该任务的所有勋章
+                badges = Badge.query.filter_by(task_id=task_id).all()
                 
                 # 记录是否有新勋章被颁发
                 new_badge_earned = False
@@ -1154,16 +1234,38 @@ def add_points():
                     # 检查是否已经获得该勋章
                     existing_badge = ChildBadge.query.filter_by(child_id=child_id, badge_id=badge.id).first()
                     
-                    # 如果未获得该勋章，且连续天数达到要求
-                    if not existing_badge and streak.current_streak >= badge.days_required:
-                        # 创建勋章记录
-                        child_badge = ChildBadge(child_id=child_id, badge_id=badge.id)
-                        db.session.add(child_badge)
+                    # 判断是基于完成次数还是连续天数
+                    if badge.completions_required > 0:
+                        # 基于完成次数的勋章
+                        # 计算该任务的完成次数
+                        completion_count = db.session.query(func.count(TaskRecord.id)).filter(
+                            TaskRecord.child_id == child_id,
+                            TaskRecord.task_id == task_id,
+                            TaskRecord.is_confirmed == True
+                        ).scalar()
                         
-                        # 给予积分奖励
-                        child.points += badge.points_reward
-                        flash(f"🎉 {child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
-                        new_badge_earned = True
+                        # 如果未获得该勋章，且完成次数达到要求
+                        if not existing_badge and completion_count >= badge.completions_required:
+                            # 创建勋章记录
+                            child_badge = ChildBadge(child_id=child_id, badge_id=badge.id)
+                            db.session.add(child_badge)
+                            
+                            # 给予积分奖励
+                            child.points += badge.points_reward
+                            flash(f"🎉 {child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                            new_badge_earned = True
+                    else:
+                        # 基于连续天数的勋章
+                        # 如果未获得该勋章，且连续天数达到要求
+                        if not existing_badge and streak.current_streak >= badge.days_required:
+                            # 创建勋章记录
+                            child_badge = ChildBadge(child_id=child_id, badge_id=badge.id)
+                            db.session.add(child_badge)
+                            
+                            # 给予积分奖励
+                            child.points += badge.points_reward
+                            flash(f"🎉 {child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                            new_badge_earned = True
                 
                 # 如果没有新勋章被颁发但连续天数有更新，也显示进度更新信息
                 if not new_badge_earned and streak.current_streak > 0:

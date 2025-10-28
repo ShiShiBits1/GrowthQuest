@@ -22,7 +22,7 @@
                     <th>名称</th>
                     <th>描述</th>
                     <th>关联任务</th>
-                    <th>连续天数</th>
+                    <th>完成条件</th>
                     <th>等级</th>
                     <th>积分奖励</th>
                     {% if is_parent %}
@@ -37,7 +37,13 @@
                     <td>{{ badge.name }}</td>
                     <td>{{ badge.description }}</td>
                     <td>{{ badge.task.name if badge.task else '无关联任务' }}</td>
-                    <td>{{ badge.days_required }}</td>
+                    <td>
+                        {% if badge.completions_required > 0 %}
+                        完成{{ badge.completions_required }}次
+                        {% else %}
+                        连续{{ badge.days_required }}天
+                        {% endif %}
+                    </td>
                     <td>{{ badge.level }}</td>
                     <td>{{ badge.points_reward }}</td>
                     {% if is_parent %}

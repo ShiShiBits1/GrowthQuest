@@ -33,6 +33,18 @@ def migrate_badge_table():
                 else:
                     raise
             
+            # 添加completions_required字段
+            try:
+                db.session.execute(text("ALTER TABLE badge ADD COLUMN completions_required INTEGER DEFAULT 0"))
+                db.session.commit()
+                print("已添加completions_required字段")
+            except Exception as e:
+                db.session.rollback()
+                if 'duplicate column name' in str(e).lower() or 'duplicate column' in str(e).lower():
+                    print("completions_required字段已存在")
+                else:
+                    raise
+            
             print("数据库迁移完成！")
             
         except Exception as e:

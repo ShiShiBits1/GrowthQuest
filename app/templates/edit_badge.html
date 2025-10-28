@@ -34,8 +34,15 @@
             </div>
             
             <div class="form-group">
-                <label for="days_required">连续完成天数 *</label>
-                <input type="number" id="days_required" name="days_required" required min="1" value="{{ badge.days_required }}" placeholder="请输入需要连续完成的天数">
+                <label for="completions_required">完成次数（设置大于0时，使用完成次数而非连续天数）</label>
+                <input type="number" id="completions_required" name="completions_required" min="0" value="{{ badge.completions_required or 0 }}" placeholder="请输入需要完成的次数">
+                <small class="form-text text-muted">例如：5表示累计完成5次即可获得勋章</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="days_required">连续完成天数（当完成次数为0时使用）</label>
+                <input type="number" id="days_required" name="days_required" min="1" value="{{ badge.days_required }}" placeholder="请输入需要连续完成的天数">
+                <small class="form-text text-muted">例如：30表示连续完成30天即可获得勋章</small>
             </div>
             
             <div class="form-group">

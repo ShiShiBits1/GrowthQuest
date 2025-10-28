@@ -100,6 +100,7 @@ class Badge(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)  # 关联的任务
     task = db.relationship('Task', backref='badges', lazy='joined')  # 添加与Task的关联关系
     days_required = db.Column(db.Integer, default=30)  # 连续完成天数要求
+    completions_required = db.Column(db.Integer, default=0)  # 完成次数要求，0表示使用连续天数
     level = db.Column(db.String(32), nullable=False, default='初级')  # 勋章等级：初级、中级、高级、毕业
     points_reward = db.Column(db.Integer, default=10)  # 获得勋章奖励的积分
     # 关联到孩子获得的勋章

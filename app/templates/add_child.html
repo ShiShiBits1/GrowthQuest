@@ -4,6 +4,35 @@
 
 {% block content %}
 <h1>添加孩子</h1>
+<style>
+  .form-group {
+    margin-bottom: 25px; /* 增加表单组之间的间距 */
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  .form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 14px;
+  }
+  button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+</style>
 <form method="POST">
     <div class="form-group">
         <label for="name">姓名</label>
