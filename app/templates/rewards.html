@@ -51,7 +51,9 @@
         <td>{{ '激活' if reward.is_active else '停用' }}</td>
         <td>
             {% if is_parent %}
-            <a href="{{ url_for('main.edit_reward', reward_id=reward.id) }}" class="button">编辑</a>
+            <a href="{{ url_for('main.edit_reward', reward_id=reward.id) }}" class="btn btn-sm btn-primary">
+                <i class="fa fa-edit"></i> 编辑
+            </a>
             {% endif %}
         </td>
     </tr>

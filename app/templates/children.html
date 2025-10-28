@@ -23,7 +23,7 @@
     text-align: left;
   }
   table th {
-    background-color: #4CAF50; /* 保持绿色表头 */
+    background-color: #4CAF50; /* 保持与奖励管理页面相同的绿色表头 */
     color: white;
     font-weight: bold;
   }
@@ -62,6 +62,6 @@
 <p>您还没有添加孩子</p>
 {% endif %}
 <div style="margin-top: 30px;">
-  <a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
-</div>
-{% endblock %}
+    <a href="{{ url_for('main.add_child') }}" class="button">添加孩子</a>
+  </div>
+  {% endblock %}

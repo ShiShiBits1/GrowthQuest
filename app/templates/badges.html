@@ -3,66 +3,84 @@
 {% block title %}徽章管理 - 成长奖励系统{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">🏆 徽章管理</h1>
-    
-    {% if is_parent %}
-    <div class="mb-4">
-        <a href="{{ url_for('main.add_badge') }}" class="button">
-            <i class="fa fa-plus"></i> 添加徽章
-        </a>
-    </div>
-    {% endif %}
-    
-    <div class="table-container">
-        <table class="table table-striped">
-            <thead style="background-color: #4CAF50; color: white;">
-                <tr>
-                    <th>图标</th>
-                    <th>名称</th>
-                    <th>描述</th>
-                    <th>关联任务</th>
-                    <th>完成条件</th>
-                    <th>等级</th>
-                    <th>积分奖励</th>
-                    {% if is_parent %}
-                    <th>操作</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for badge in badges %}
-                <tr>
-                    <td>{{ badge.icon }}</td>
-                    <td>{{ badge.name }}</td>
-                    <td>{{ badge.description }}</td>
-                    <td>{{ badge.task.name if badge.task else '无关联任务' }}</td>
-                    <td>
-                        {% if badge.completions_required > 0 %}
-                        完成{{ badge.completions_required }}次
-                        {% else %}
-                        连续{{ badge.days_required }}天
-                        {% endif %}
-                    </td>
-                    <td>{{ badge.level }}</td>
-                    <td>{{ badge.points_reward }}</td>
-                    {% if is_parent %}
-                    <td>
-                        <a href="{{ url_for('main.edit_badge', badge_id=badge.id) }}" class="btn btn-sm btn-primary">
-                            <i class="fa fa-edit"></i> 编辑
-                        </a>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    {% if badges|length == 0 %}
-    <div class="alert alert-info mt-4">
-        暂无徽章记录。
-    </div>
-    {% endif %}
+<h1>🏆 徽章管理</h1>
+<style>
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 30px; /* 增加表格与按钮之间的间距 */
+  }
+  table tr {
+    height: 50px; /* 增加表格行高 */
+  }
+  table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  table th,
+  table td {
+    padding: 12px 15px; /* 增加单元格内边距 */
+    text-align: left;
+  }
+  table th {
+    background-color: #4CAF50; /* 保持与奖励管理页面相同的绿色表头 */
+    color: white;
+    font-weight: bold;
+  }
+  .button {
+    margin-top: 15px;
+    padding: 10px 20px;
+  }
+</style>
+
+{% if is_parent %}
+<div style="margin-bottom: 30px;">
+    <a href="{{ url_for('main.add_badge') }}" class="button">
+        <i class="fa fa-plus"></i> 添加徽章
+    </a>
 </div>
+{% endif %}
+
+{% if badges %}
+<table>
+    <tr>
+        <th>图标</th>
+        <th>名称</th>
+        <th>描述</th>
+        <th>关联任务</th>
+        <th>完成条件</th>
+        <th>等级</th>
+        <th>积分奖励</th>
+        {% if is_parent %}
+        <th>操作</th>
+        {% endif %}
+    </tr>
+    {% for badge in badges %}
+    <tr>
+        <td>{{ badge.icon }}</td>
+        <td>{{ badge.name }}</td>
+        <td>{{ badge.description }}</td>
+        <td>{{ badge.task.name if badge.task else '无关联任务' }}</td>
+        <td>
+            {% if badge.completions_required > 0 %}
+            完成{{ badge.completions_required }}次
+            {% else %}
+            连续{{ badge.days_required }}天
+            {% endif %}
+        </td>
+        <td>{{ badge.level }}</td>
+        <td>{{ badge.points_reward }}</td>
+        {% if is_parent %}
+        <td>
+            <a href="{{ url_for('main.edit_badge', badge_id=badge.id) }}" class="btn btn-sm btn-primary">
+                <i class="fa fa-edit"></i> 编辑
+            </a>
+        </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>暂无徽章记录。</p>
+{% endif %}
 {% endblock %}

@@ -72,7 +72,9 @@
         <td>{{ '激活' if task.is_active else '停用' }}</td>
         <td>
             {% if is_parent %}
-            <a href="{{ url_for('main.edit_task', task_id=task.id) }}" class="button">编辑</a>
+            <a href="{{ url_for('main.edit_task', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                <i class="fa fa-edit"></i> 编辑
+            </a>
             {% endif %}
         </td>
     </tr>

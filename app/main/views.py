@@ -205,6 +205,10 @@ def edit_child(child_id):
         db.session.commit()
         flash('孩子信息更新成功')
         return redirect(url_for('main.child_detail', child_id=child.id))
+    
+    return render_template('edit_child.html', child=child)
+    
+
 
 
 # 在线学习功能相关路由
@@ -369,8 +373,6 @@ def learning_statistics(child_id):
                           total_resources=total_resources,
                           completed_resources=completed_resources,
                           recent_progress=recent_progress)
-    
-    return render_template('edit_child.html', child=child)
 
 # 删除功能已移至POST方法实现，见文件底部
 
