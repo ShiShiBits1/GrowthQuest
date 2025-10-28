@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}编辑徽章 - 成长奖励系统{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🔧 编辑徽章</h1>
+    
+    <div class="card p-4">
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">徽章名称 *</label>
+                <input type="text" id="name" name="name" required value="{{ badge.name }}" placeholder="请输入徽章名称">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">徽章描述</label>
+                <textarea id="description" name="description" placeholder="请输入徽章描述">{{ badge.description }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="icon">徽章图标</label>
+                <input type="text" id="icon" name="icon" value="{{ badge.icon }}" placeholder="请输入徽章图标">
+                <small class="form-text text-muted">可以使用emoji或其他特殊字符作为图标</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="task_id">关联任务 *</label>
+                <select id="task_id" name="task_id" required>
+                    {% for task in tasks %}
+                    <option value="{{ task.id }}" {% if task.id == badge.task_id %}selected{% endif %}>{{ task.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="days_required">连续完成天数 *</label>
+                <input type="number" id="days_required" name="days_required" required min="1" value="{{ badge.days_required }}" placeholder="请输入需要连续完成的天数">
+            </div>
+            
+            <div class="form-group">
+                <label for="level">徽章等级</label>
+                <select id="level" name="level">
+                    <option value="初级" {% if badge.level == '初级' %}selected{% endif %}>初级</option>
+                    <option value="中级" {% if badge.level == '中级' %}selected{% endif %}>中级</option>
+                    <option value="高级" {% if badge.level == '高级' %}selected{% endif %}>高级</option>
+                    <option value="毕业" {% if badge.level == '毕业' %}selected{% endif %}>毕业</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="points_reward">积分奖励</label>
+                <input type="number" id="points_reward" name="points_reward" min="0" value="{{ badge.points_reward }}" placeholder="请输入获得徽章时奖励的积分">
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="button">保存修改</button>
+                <a href="{{ url_for('main.list_badges') }}" class="button" style="background-color: #6c757d; margin-left: 10px;">取消</a>
+            </div>
+        </form>
+        
+        <!-- 删除按钮 -->
+        <div class="mt-4">
+            <form method="POST" action="{{ url_for('main.delete_badge', badge_id=badge.id) }}" onsubmit="return confirm('确定要删除这个徽章吗？如果有孩子已获得此徽章，将无法删除。');">
+                <button type="submit" class="button danger-button" style="border-radius: 4px;">删除徽章</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

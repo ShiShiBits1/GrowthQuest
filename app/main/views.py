@@ -527,9 +527,140 @@ def edit_task(task_id):
         return redirect(url_for('main.list_tasks'))
     return render_template('edit_task.html', task=task, categories=categories)
 
+@main.route('/task/delete/<int:task_id>', methods=['POST'])
+@login_required
+def delete_task(task_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    try:
+        task = Task.query.get_or_404(task_id)
+        
+        # 检查是否有任务记录使用该任务
+        task_record_count = TaskRecord.query.filter_by(task_id=task_id).count()
+        if task_record_count > 0:
+            flash(f'无法删除该任务，因为有{task_record_count}条任务记录正在使用它')
+            return redirect(url_for('main.edit_task', task_id=task_id))
+        
+        # 检查是否有徽章关联到该任务
+        badge_count = Badge.query.filter_by(task_id=task_id).count()
+        if badge_count > 0:
+            flash(f'无法删除该任务，因为有{badge_count}个徽章关联到它。请先删除相关徽章。')
+            return redirect(url_for('main.edit_task', task_id=task_id))
+        
+        # 删除任务
+        db.session.delete(task)
+        db.session.commit()
+        flash('任务删除成功')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除任务失败: {str(e)}')
+    
+    return redirect(url_for('main.list_tasks'))
 
 
 
+# 徽章管理路由
+@main.route('/badges')
+@login_required
+def list_badges():
+    badges = Badge.query.join(Task).all()
+    # 检查是否是家长用户
+    is_parent = hasattr(current_user, 'children')
+    return render_template('badges.html', badges=badges, is_parent=is_parent)
+
+@main.route('/badge/add', methods=['GET', 'POST'])
+@login_required
+def add_badge():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    # 获取所有任务供选择
+    tasks = Task.query.filter_by(is_active=True).all()
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form.get('description', '')
+        icon = request.form.get('icon', '🏆')
+        task_id = int(request.form['task_id'])
+        days_required = int(request.form['days_required'])
+        level = request.form.get('level', '初级')
+        points_reward = int(request.form.get('points_reward', 10))
+        
+        # 创建新徽章
+        badge = Badge(
+            name=name,
+            description=description,
+            icon=icon,
+            task_id=task_id,
+            days_required=days_required,
+            level=level,
+            points_reward=points_reward
+        )
+        db.session.add(badge)
+        db.session.commit()
+        flash('徽章添加成功')
+        return redirect(url_for('main.list_badges'))
+    
+    return render_template('add_badge.html', tasks=tasks)
+
+@main.route('/badge/edit/<int:badge_id>', methods=['GET', 'POST'])
+@login_required
+def edit_badge(badge_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    badge = Badge.query.get_or_404(badge_id)
+    # 获取所有任务供选择
+    tasks = Task.query.filter_by(is_active=True).all()
+    
+    if request.method == 'POST':
+        badge.name = request.form['name']
+        badge.description = request.form.get('description', '')
+        badge.icon = request.form.get('icon', '🏆')
+        badge.task_id = int(request.form['task_id'])
+        badge.days_required = int(request.form['days_required'])
+        badge.level = request.form.get('level', '初级')
+        badge.points_reward = int(request.form.get('points_reward', 10))
+        
+        db.session.commit()
+        flash('徽章更新成功')
+        return redirect(url_for('main.list_badges'))
+    
+    return render_template('edit_badge.html', badge=badge, tasks=tasks)
+
+@main.route('/badge/delete/<int:badge_id>', methods=['POST'])
+@login_required
+def delete_badge(badge_id):
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        flash('权限不足')
+        return redirect(url_for('main.child_dashboard'))
+    
+    try:
+        badge = Badge.query.get_or_404(badge_id)
+        
+        # 检查是否有孩子已获得此徽章
+        child_badge_count = ChildBadge.query.filter_by(badge_id=badge_id).count()
+        if child_badge_count > 0:
+            flash(f'无法删除该徽章，因为有{child_badge_count}个孩子已获得它')
+            return redirect(url_for('main.edit_badge', badge_id=badge_id))
+        
+        # 删除徽章
+        db.session.delete(badge)
+        db.session.commit()
+        flash('徽章删除成功')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除徽章失败: {str(e)}')
+    
+    return redirect(url_for('main.list_badges'))
 
 # 奖励管理路由
 @main.route('/rewards')

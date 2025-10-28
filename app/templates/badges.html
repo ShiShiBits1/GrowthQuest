@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}徽章管理 - 成长奖励系统{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🏆 徽章管理</h1>
+    
+    {% if is_parent %}
+    <div class="mb-4">
+        <a href="{{ url_for('main.add_badge') }}" class="button">
+            <i class="fa fa-plus"></i> 添加徽章
+        </a>
+    </div>
+    {% endif %}
+    
+    <div class="table-container">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>图标</th>
+                    <th>名称</th>
+                    <th>描述</th>
+                    <th>关联任务</th>
+                    <th>连续天数</th>
+                    <th>等级</th>
+                    <th>积分奖励</th>
+                    {% if is_parent %}
+                    <th>操作</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for badge in badges %}
+                <tr>
+                    <td>{{ badge.icon }}</td>
+                    <td>{{ badge.name }}</td>
+                    <td>{{ badge.description }}</td>
+                    <td>{{ badge.task.name if badge.task else '无关联任务' }}</td>
+                    <td>{{ badge.days_required }}</td>
+                    <td>{{ badge.level }}</td>
+                    <td>{{ badge.points_reward }}</td>
+                    {% if is_parent %}
+                    <td>
+                        <a href="{{ url_for('main.edit_badge', badge_id=badge.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fa fa-edit"></i> 编辑
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if badges|length == 0 %}
+    <div class="alert alert-info mt-4">
+        暂无徽章记录。
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

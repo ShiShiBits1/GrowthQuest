@@ -43,5 +43,10 @@
 </form>
 
 <br>
-<a href="{{ url_for('main.list_tasks') }}" class="button">取消</a>
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('main.list_tasks') }}" class="button">取消</a>
+    <form action="{{ url_for('main.delete_task', task_id=task.id) }}" method="POST" style="display: inline;">
+        <button type="submit" class="button" style="background-color: #dc3545; color: white;" onclick="return confirm('确定要删除这个任务吗？如果有任务记录使用该任务，将无法删除。')">删除任务</button>
+    </form>
+</div>
 {% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}添加徽章 - 成长奖励系统{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">✨ 添加新徽章</h1>
+    
+    <div class="card p-4">
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">徽章名称 *</label>
+                <input type="text" id="name" name="name" required placeholder="请输入徽章名称">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">徽章描述</label>
+                <textarea id="description" name="description" placeholder="请输入徽章描述"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="icon">徽章图标</label>
+                <input type="text" id="icon" name="icon" placeholder="请输入徽章图标，默认使用🏆" value="🏆">
+                <small class="form-text text-muted">可以使用emoji或其他特殊字符作为图标</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="task_id">关联任务 *</label>
+                <select id="task_id" name="task_id" required>
+                    <option value="">请选择任务</option>
+                    {% for task in tasks %}
+                    <option value="{{ task.id }}">{{ task.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="days_required">连续完成天数 *</label>
+                <input type="number" id="days_required" name="days_required" required min="1" placeholder="请输入需要连续完成的天数">
+            </div>
+            
+            <div class="form-group">
+                <label for="level">徽章等级</label>
+                <select id="level" name="level">
+                    <option value="初级">初级</option>
+                    <option value="中级">中级</option>
+                    <option value="高级">高级</option>
+                    <option value="毕业">毕业</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="points_reward">积分奖励</label>
+                <input type="number" id="points_reward" name="points_reward" min="0" placeholder="请输入获得徽章时奖励的积分" value="10">
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="button">保存</button>
+                <a href="{{ url_for('main.list_badges') }}" class="button" style="background-color: #6c757d; margin-left: 10px;">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
