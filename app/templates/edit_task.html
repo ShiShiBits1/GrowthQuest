@@ -25,6 +25,21 @@
   .form-group textarea {
     resize: vertical;
   }
+  .form-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+  }
+  .form-checkbox input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+    transform: scale(1.2); /* 增大复选框 */
+  }
+  .form-checkbox label {
+    display: inline;
+    margin-bottom: 0;
+    font-weight: normal;
+  }
   button,
   .button {
     margin-top: 20px;
@@ -42,7 +57,7 @@
     margin-right: 15px;
   }
 </style>
-<form method="post">
+<form method="post" id="task-form">
     <div class="form-group">
         <label for="name">任务名称</label>
         <input type="text" id="name" name="name" value="{{ task.name }}" required>
@@ -70,20 +85,18 @@
         <a href="{{ url_for('main.manage_task_categories') }}" class="button secondary">管理分类</a>
     </div>
     
-    <div class="form-group">
-        <label>
-            <input type="checkbox" name="is_active" {% if task.is_active %}checked{% endif %}>
-            启用此任务
-        </label>
+    <div class="form-checkbox">
+        <input type="checkbox" id="is_active" name="is_active" {% if task.is_active %}checked{% endif %}>
+        <label for="is_active">启用此任务</label>
     </div>
     
-    <button type="submit" class="button">保存修改</button>
 </form>
 
 <div class="form-actions" style="display: flex; gap: 15px;">
-    <a href="{{ url_for('main.list_tasks') }}" class="button">取消</a>
+    <button type="submit" form="task-form" class="button" style="background-color: #4CAF50; color: white;">保存修改</button>
+    <a href="{{ url_for('main.list_tasks') }}" class="button" style="background-color: #6c757d; color: white;">取消</a>
     <form action="{{ url_for('main.delete_task', task_id=task.id) }}" method="POST" style="display: inline;">
         <button type="submit" class="button" style="background-color: #dc3545; color: white;" onclick="return confirm('确定要删除这个任务吗？如果有任务记录使用该任务，将无法删除。')">删除任务</button>
     </form>
-</div>
+  </div>
 {% endblock %}

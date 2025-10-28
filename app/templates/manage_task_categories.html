@@ -28,7 +28,7 @@
                 <div class="action-links">
                     <a href="{{ url_for('main.edit_task_category', category_id=category.id) }}" class="button small primary">编辑</a>
                     <form action="{{ url_for('main.delete_task_category', category_id=category.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('确定要删除这个分类吗？如果有任务使用该分类，将无法删除。');">
-                        <button type="submit" class="button small danger">删除</button>
+                        <button type="submit" class="button small danger" style="background-color: #dc3545; color: white;">删除</button>
                     </form>
                 </div>
             </td>
@@ -72,6 +72,11 @@
 .button.small {
     padding: 6px 12px;
     font-size: 14px;
+}
+
+.button.small.danger {
+    background-color: #dc3545;
+    color: white;
 }
 
 .empty-state {
