@@ -670,6 +670,7 @@ def add_points():
             # 转换日期字符串为datetime对象
             from datetime import datetime
             completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+            task_date = completed_at.date()
             
             # 创建任务记录
             task_record = TaskRecord(
@@ -684,6 +685,92 @@ def add_points():
             
             # 更新孩子积分
             child.points += task.points
+            
+            # 更新连续天数和检查勋章
+            # 查找该任务的连续记录
+            streak = TaskStreak.query.filter_by(child_id=child_id, task_id=task_id).first()
+            
+            if not streak:
+                # 创建新的连续记录
+                streak = TaskStreak(
+                    child_id=child_id,
+                    task_id=task_id,
+                    current_streak=1,
+                    last_completed_date=task_date,
+                    longest_streak=1
+                )
+                db.session.add(streak)
+                
+                # 检查是否需要为该任务创建默认勋章
+                existing_badges = Badge.query.filter_by(task_id=task_id).all()
+                if not existing_badges:
+                    # 创建默认的30天勋章
+                    badge = Badge(
+                        name=f'{task.name}连续达人',
+                        description=f'连续完成{task.name}30天',
+                        icon='🏆',
+                        task_id=task_id,
+                        days_required=30,
+                        level="初级",
+                        points_reward=10
+                    )
+                    db.session.add(badge)
+                    flash(f"系统已为任务 '{task.name}' 自动创建了勋章！")
+            else:
+                # 计算与上一次完成的日期差
+                if streak.last_completed_date:
+                    days_diff = (task_date - streak.last_completed_date).days
+                    
+                    if days_diff == 1 or (days_diff == 0 and task_date == date.today()):
+                        # 连续完成，增加连续天数
+                        streak.current_streak += 1
+                    elif days_diff > 1:
+                        # 中断了，重置连续天数
+                        streak.current_streak = 1
+                    # 如果是同一天，不改变连续天数（避免重复计数）
+                else:
+                    streak.current_streak = 1
+                
+                streak.last_completed_date = task_date
+                # 更新最长连续天数
+                if streak.current_streak > streak.longest_streak:
+                    streak.longest_streak = streak.current_streak
+                
+                # 检查并颁发勋章
+                # 获取该任务的所有勋章（按天数要求从低到高排序）
+                badges = Badge.query.filter_by(task_id=task_id).order_by(Badge.days_required).all()
+                
+                # 记录是否有新勋章被颁发
+                new_badge_earned = False
+                
+                for badge in badges:
+                    # 检查是否已经获得该勋章
+                    existing_badge = ChildBadge.query.filter_by(child_id=child_id, badge_id=badge.id).first()
+                    
+                    # 如果未获得该勋章，且连续天数达到要求
+                    if not existing_badge and streak.current_streak >= badge.days_required:
+                        # 创建勋章记录
+                        child_badge = ChildBadge(child_id=child_id, badge_id=badge.id)
+                        db.session.add(child_badge)
+                        
+                        # 给予积分奖励
+                        child.points += badge.points_reward
+                        flash(f"🎉 {child.name} 获得了「{badge.name}」勋章！额外奖励 {badge.points_reward} 积分！")
+                        new_badge_earned = True
+                
+                # 如果没有新勋章被颁发但连续天数有更新，也显示进度更新信息
+                if not new_badge_earned and streak.current_streak > 0:
+                    # 查找该任务的下一个勋章
+                    next_badge = Badge.query.filter(
+                        Badge.task_id == task_id,
+                        Badge.days_required > streak.current_streak
+                    ).order_by(Badge.days_required).first()
+                    
+                    if next_badge:
+                        days_remaining = next_badge.days_required - streak.current_streak
+                        flash(f"🔥 {child.name} 已连续完成 {task.name} {streak.current_streak} 天，距离获得「{next_badge.name}」勋章还需 {days_remaining} 天！")
+                    else:
+                        flash(f"🎉 {child.name} 已连续完成 {task.name} {streak.current_streak} 天，已达到最高连续记录！")
             
             # 提交数据库更改
             db.session.commit()
