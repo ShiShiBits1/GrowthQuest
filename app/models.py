@@ -82,6 +82,7 @@ class TaskRecord(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_confirmed = db.Column(db.Boolean, default=False)  # 家长确认
+    actual_points = db.Column(db.Integer)  # 实际添加的积分值
 
 class RewardRecord(db.Model):
     """奖励兑换记录模型"""
@@ -118,6 +119,7 @@ class ChildBadge(db.Model):
 # 添加统计方法到各个模型类
 # 为Child模型添加数据分析方法
 def add_analysis_methods(cls):
+    from sqlalchemy import func
     # 获取指定时间段内完成的任务数量
     @classmethod
     def get_task_completion_by_period(cls, child_id, start_date=None, end_date=None):
@@ -146,10 +148,10 @@ def add_analysis_methods(cls):
     def get_points_trend(cls, child_id, days=30):
         start_date = datetime.utcnow() - timedelta(days=days)
         
-        # 按天分组统计获得的积分
+        # 按天分组统计获得的积分，优先使用actual_points字段
         daily_points = db.session.query(
             func.date(TaskRecord.completed_at).label('date'),
-            func.sum(Task.points).label('daily_points')
+            func.sum(func.coalesce(TaskRecord.actual_points, Task.points)).label('daily_points')
         ).join(
             TaskRecord.task
         ).filter(

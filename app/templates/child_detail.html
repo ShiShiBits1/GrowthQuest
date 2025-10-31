@@ -29,7 +29,7 @@
     {% for record in task_records %}
     <tr>
         <td>{{ record.task.name }}</td>
-        <td>{{ record.task.points }}</td>
+        <td>{{ record.actual_points or record.task.points }}</td>
         <td>{{ record.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>{{ '已确认' if record.is_confirmed else '待确认' }}</td>
         <td>

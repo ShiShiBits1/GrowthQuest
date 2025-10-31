@@ -27,8 +27,8 @@
     </div>
     
     <div class="form-group">
-        <label for="points_display">奖励积分</label>
-        <input type="number" id="points_display" readonly placeholder="选择任务后显示积分">
+        <label for="points_input">奖励积分</label>
+        <input type="number" id="points_input" name="points_input" placeholder="选择任务后显示默认积分，或手动输入自定义积分" min="0">
     </div>
     
     <div class="form-group">
@@ -40,21 +40,21 @@
 </form>
 
 <script>
-    // 实现任务选择与积分的联动功能
-    document.getElementById('task_id').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const points = selectedOption.getAttribute('data-points');
-        document.getElementById('points_display').value = points;
-    });
-    
-    // 页面加载时，如果已有任务选中，显示对应的积分
-    window.addEventListener('load', function() {
-        const taskSelect = document.getElementById('task_id');
-        if (taskSelect.value) {
-            const selectedOption = taskSelect.options[taskSelect.selectedIndex];
+        // 实现任务选择与积分的联动功能
+        document.getElementById('task_id').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
             const points = selectedOption.getAttribute('data-points');
-            document.getElementById('points_display').value = points;
-        }
-    });
-</script>
+            document.getElementById('points_input').value = points;
+        });
+        
+        // 页面加载时，如果已有任务选中，显示对应的积分
+        window.addEventListener('load', function() {
+            const taskSelect = document.getElementById('task_id');
+            if (taskSelect.value) {
+                const selectedOption = taskSelect.options[taskSelect.selectedIndex];
+                const points = selectedOption.getAttribute('data-points');
+                document.getElementById('points_input').value = points;
+            }
+        });
+    </script>
 {% endblock %}

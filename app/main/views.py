@@ -775,8 +775,11 @@ def confirm_task_record(record_id):
     
     if not record.is_confirmed:
         record.is_confirmed = True
+        # 设置实际积分值（如果未设置则使用任务默认积分）
+        if not record.actual_points:
+            record.actual_points = record.task.points
         # 增加孩子积分
-        record.child.points += record.task.points
+        record.child.points += record.actual_points
         
         # 计算连续完成天数
         task_date = record.completed_at.date()
@@ -814,13 +817,13 @@ def confirm_task_record(record_id):
             if streak.last_completed_date:
                 days_diff = (task_date - streak.last_completed_date).days
                 
-                if days_diff == 1 or (days_diff == 0 and task_date == date.today()):
-                    # 连续完成，增加连续天数
+                if days_diff == 1:
+                    # 新的一天，连续完成，增加连续天数
                     streak.current_streak += 1
                 elif days_diff > 1:
-                    # 中断了，重置连续天数
+                    # 间隔超过1天，中断了，重置连续天数
                     streak.current_streak = 1
-                # 如果是同一天，不改变连续天数（避免重复计数）
+                # 如果是同一天（days_diff == 0），不改变连续天数（避免重复计数）
             else:
                 streak.current_streak = 1
             
@@ -913,6 +916,7 @@ def edit_task_record(record_id):
             
             # 转换日期字符串为datetime对象
             from datetime import datetime, date
+            from sqlalchemy import func
             completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             task_date = completed_at.date()
             
@@ -1157,23 +1161,39 @@ def add_points():
             task = Task.query.get_or_404(task_id)
             
             # 转换日期字符串为datetime对象
-            from datetime import datetime
+            from datetime import datetime, date
+            from sqlalchemy import func
             completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             task_date = completed_at.date()
+            
+            # 获取积分值（优先使用表单提交的自定义积分，如果没有则使用任务默认积分）
+            points_value = request.form.get('points_input')
+            if points_value and points_value.strip():  # 检查是否有手动输入的积分
+                try:
+                    points_to_add = int(points_value)
+                    if points_to_add < 0:
+                        flash('积分不能为负数')
+                        return redirect(url_for('main.add_points'))
+                except ValueError:
+                    flash('请输入有效的积分数量')
+                    return redirect(url_for('main.add_points'))
+            else:
+                points_to_add = task.points
             
             # 创建任务记录
             task_record = TaskRecord(
                 child_id=child_id,
                 task_id=task_id,
                 completed_at=completed_at,
-                is_confirmed=True  # 直接确认，立即发放积分
+                is_confirmed=True,  # 直接确认，立即发放积分
+                actual_points=points_to_add  # 存储实际添加的积分值
             )
             
             # 添加任务记录
             db.session.add(task_record)
             
             # 更新孩子积分
-            child.points += task.points
+            child.points += points_to_add
             
             # 更新连续天数和检查勋章
             # 查找该任务的连续记录
@@ -1210,13 +1230,13 @@ def add_points():
                 if streak.last_completed_date:
                     days_diff = (task_date - streak.last_completed_date).days
                     
-                    if days_diff == 1 or (days_diff == 0 and task_date == date.today()):
-                        # 连续完成，增加连续天数
+                    if days_diff == 1:
+                        # 新的一天，连续完成，增加连续天数
                         streak.current_streak += 1
                     elif days_diff > 1:
-                        # 中断了，重置连续天数
+                        # 间隔超过1天，中断了，重置连续天数
                         streak.current_streak = 1
-                    # 如果是同一天，不改变连续天数（避免重复计数）
+                    # 如果是同一天（days_diff == 0），不改变连续天数（避免重复计数）
                 else:
                     streak.current_streak = 1
                 
@@ -1286,7 +1306,7 @@ def add_points():
             # 提交数据库更改
             db.session.commit()
             
-            flash(f'已成功为{child.name}添加{task.points}积分！')
+            flash(f'已成功为{child.name}添加{points_to_add}积分！')
             return redirect(url_for('main.add_points'))
             
         except ValueError:
