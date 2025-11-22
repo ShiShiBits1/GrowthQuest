@@ -56,5 +56,77 @@
                 document.getElementById('points_input').value = points;
             }
         });
+        
+        // 使用AJAX异步获取过滤后的任务列表
+        document.getElementById('child_id').addEventListener('change', function() {
+            updateTasksList();
+        });
+        
+        document.getElementById('date').addEventListener('change', function() {
+            updateTasksList();
+        });
+        
+        function updateTasksList() {
+            const childId = document.getElementById('child_id').value;
+            const dateInput = document.getElementById('date').value;
+            const taskSelect = document.getElementById('task_id');
+            
+            // 只有当孩子和日期都选择了才发送请求
+            if (!childId || !dateInput) {
+                return;
+            }
+            
+            // 从日期时间字符串中提取日期部分 (YYYY-MM-DD)
+            const date = dateInput.split('T')[0];
+            
+            // 清空任务列表并添加加载中选项
+            taskSelect.innerHTML = '<option value="" disabled selected>加载中...</option>';
+            
+            // 发送AJAX请求
+            fetch(`/api/get_filtered_tasks?child_id=${childId}&date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 清空任务选择框
+                    taskSelect.innerHTML = '<option value="" disabled selected>请选择任务</option>';
+                    
+                    if (data.error) {
+                        // 显示错误信息
+                        const errorOption = document.createElement('option');
+                        errorOption.value = '';
+                        errorOption.disabled = true;
+                        errorOption.textContent = '加载失败: ' + data.error;
+                        taskSelect.appendChild(errorOption);
+                    } else if (data.tasks && data.tasks.length > 0) {
+                        // 添加任务选项
+                        data.tasks.forEach(task => {
+                            const option = document.createElement('option');
+                            option.value = task.id;
+                            option.setAttribute('data-points', task.points);
+                            option.textContent = `${task.name} (${task.category})`;
+                            taskSelect.appendChild(option);
+                        });
+                    } else {
+                        // 没有可用任务
+                        const noTaskOption = document.createElement('option');
+                        noTaskOption.value = '';
+                        noTaskOption.disabled = true;
+                        noTaskOption.textContent = '当天没有可用任务';
+                        taskSelect.appendChild(noTaskOption);
+                    }
+                    
+                    // 重置积分输入框
+                    document.getElementById('points_input').value = '';
+                })
+                .catch(error => {
+                    // 显示错误信息
+                    taskSelect.innerHTML = '<option value="" disabled selected>请选择任务</option>';
+                    const errorOption = document.createElement('option');
+                    errorOption.value = '';
+                    errorOption.disabled = true;
+                    errorOption.textContent = '网络错误，请重试';
+                    taskSelect.appendChild(errorOption);
+                    console.error('Error fetching tasks:', error);
+                });
+        }
     </script>
 {% endblock %}

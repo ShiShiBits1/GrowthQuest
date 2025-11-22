@@ -48,37 +48,51 @@
 <p>暂无任务记录</p>
 {% endif %}
 
-<h2>奖励兑换记录</h2>
-{% if reward_records %}
-<table>
-    <tr>
-        <th>奖励名称</th>
-        <th>奖励等级</th>
-        <th>消耗积分</th>
-        <th>兑换时间</th>
-        <th>状态</th>
-        <th>操作</th>
-    </tr>
-    {% for record in reward_records %}
-    <tr>
-        <td>{{ record.reward.name }}</td>
-        <td>{{ record.reward.level }}</td>
-        <td>{{ record.reward.cost }}</td>
-        <td>{{ record.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-        <td>{{ '已兑现' if record.is_fulfilled else '待兑现' }}</td>
-        <td>
-            {% if not record.is_fulfilled %}
-            <form action="{{ url_for('main.fulfill_reward', record_id=record.id) }}" method="POST" style="display: inline;">
-                <button type="submit" class="button" onclick="return confirm('确定要兑现这个奖励吗？');">兑现</button>
-            </form>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>暂无奖励记录</p>
-{% endif %}
+<h2>积分兑换记录</h2>
+<div style="margin-bottom: 20px;">
+    {% if reward_records %}
+    <table class="records-table">
+        <thead>
+            <tr>
+                <th>奖励名称</th>
+                <th>描述</th>
+                <th>奖励等级</th>
+                <th>消耗积分</th>
+                <th>兑换时间</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in reward_records %}
+            <tr>
+                <td>{{ record.reward.name }}</td>
+                <td>{{ record.reward.description or '无' }}</td>
+                <td>{{ record.reward.level }}</td>
+                <td>{{ record.reward.cost }}</td>
+                <td>{{ record.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    <span style="color: {{ 'green' if record.is_fulfilled else 'orange' }};">
+                        {{ '已兑现' if record.is_fulfilled else '待兑现' }}
+                    </span>
+                </td>
+                <td>
+                    {% if not record.is_fulfilled %}
+                    <form action="{{ url_for('main.fulfill_reward', record_id=record.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="button" onclick="return confirm('确定要兑现这个奖励吗？');">兑现</button>
+                    </form>
+                    {% else %}
+                    <span>已完成</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>暂无积分兑换记录</p>
+    {% endif %}
+</div>
 
 <h2>可兑换奖励</h2>
 {% if available_rewards %}

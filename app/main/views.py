@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
@@ -757,6 +757,7 @@ def child_detail(child_id):
         flash('无权访问')
         return redirect(url_for('main.dashboard'))
     task_records = child.task_records.order_by(TaskRecord.completed_at.desc()).all()
+    # 查询积分兑换记录（奖励兑换记录），按兑换时间降序排列
     reward_records = child.reward_records.order_by(RewardRecord.redeemed_at.desc()).all()
     # 查询可用的奖励（符合MVC模式，在视图层处理数据库查询）
     available_rewards = Reward.query.filter_by(is_active=True).filter(Reward.cost <= child.points).all()
@@ -919,6 +920,78 @@ def edit_task_record(record_id):
             from sqlalchemy import func
             completed_at = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             task_date = completed_at.date()
+            
+            # 检查该任务在同一天是否已经被完成并确认
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'该任务在{task_date}已经完成过了，每个任务一天只能完成一次')
+                return redirect(url_for('main.add_points'))
+            
+            # 检查是否已经存在当天的相同任务记录
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'{child.name}今天已经完成过{task.name}任务了！')
+                return redirect(url_for('main.add_points'))
+            
+            # 检查是否已经存在当天的相同任务记录
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'{child.name}今天已经完成过{task.name}任务了！')
+                return redirect(url_for('main.add_points'))
+            
+            # 检查是否已经存在当天的相同任务记录
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'{child.name}今天已经完成过{task.name}任务了！')
+                return redirect(url_for('main.add_points'))
+            
+            # 检查是否已经存在当天的相同任务记录
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'{child.name}今天已经完成过{task.name}任务了！')
+                return redirect(url_for('main.add_points'))
+            
+            # 检查是否已经存在当天的相同任务记录
+            existing_record = TaskRecord.query.filter(
+                TaskRecord.child_id == child_id,
+                TaskRecord.task_id == task_id,
+                TaskRecord.is_confirmed == True,
+                func.date(TaskRecord.completed_at) == task_date
+            ).first()
+            
+            if existing_record:
+                flash(f'{child.name}今天已经完成过{task.name}任务了！')
+                return redirect(url_for('main.add_points'))
             
             # 获取新任务信息
             new_task = Task.query.get_or_404(task_id)
@@ -1122,6 +1195,61 @@ def delete_task_record(record_id):
 
 
 
+# 获取过滤后的任务列表API
+@main.route('/api/get_filtered_tasks', methods=['GET'])
+@login_required
+def get_filtered_tasks():
+    # 只有家长用户可以访问
+    if not hasattr(current_user, 'children'):
+        return jsonify({'error': '权限不足'}), 403
+    
+    # 获取参数
+    child_id = request.args.get('child_id', type=int)
+    date_str = request.args.get('date')
+    
+    # 导入需要的模块
+    from datetime import datetime
+    from sqlalchemy import func
+    import json
+    
+    # 验证参数
+    if not child_id or not date_str:
+        return jsonify({'error': '参数不完整'}), 400
+    
+    try:
+        # 解析日期
+        task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # 获取当天已完成的任务ID列表
+        completed_tasks = TaskRecord.query.filter(
+            TaskRecord.child_id == child_id,
+            TaskRecord.is_confirmed == True,
+            func.date(TaskRecord.completed_at) == task_date
+        ).with_entities(TaskRecord.task_id).all()
+        
+        # 提取任务ID
+        completed_task_ids = [task.task_id for task in completed_tasks]
+        
+        # 过滤任务列表，只显示未完成的任务
+        tasks = Task.query.filter(
+            Task.is_active == True,
+            ~Task.id.in_(completed_task_ids)
+        ).all() if completed_task_ids else Task.query.filter_by(is_active=True).all()
+        
+        # 转换为JSON格式
+        task_list = [{
+            'id': task.id,
+            'name': task.name,
+            'category': task.category,
+            'points': task.points
+        } for task in tasks]
+        
+        return jsonify({'tasks': task_list})
+    except ValueError:
+        return jsonify({'error': '日期格式错误'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # 给孩子添加积分
 @main.route('/add_points', methods=['GET', 'POST'])
 @login_required
@@ -1132,6 +1260,7 @@ def add_points():
         return redirect(url_for('main.child_dashboard'))
     # 获取当前用户的所有孩子
     children = current_user.children.all()
+    
     # 获取所有激活的任务
     tasks = Task.query.filter_by(is_active=True).all()
     
